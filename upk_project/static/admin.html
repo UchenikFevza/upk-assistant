@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель УПК: Рабочее место специалиста</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {} }
+    }
+  </script>
+  <style>
+    * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
+    .rise-up { animation: riseAnimation 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes riseAnimation { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-[#0c1222] text-slate-800 dark:text-slate-100 min-h-screen p-4 sm:p-6 font-sans">
+  <div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- Шапка -->
+    <header class="flex justify-between items-center bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+      <div class="flex items-center gap-3">
+        <img src="/static/logo2.jpg" alt="Логотип ДГУ" class="w-10 h-10 rounded-full object-cover">
+        <div>
+          <h1 class="text-lg font-bold text-indigo-700 dark:text-indigo-400">Панель диспетчера УПК</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Обработка обращений и диалог со заявителями</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white transition">
+          <svg id="moonIcon" class="w-5 h-5 block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+          <svg id="sunIcon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+        </button>
+        <a href="/" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-2 rounded-lg font-medium border border-slate-200 dark:border-slate-700">Форма студента ↗</a>
+        <button onclick="logout()" class="text-xs bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 px-3 py-2 rounded-lg font-medium border border-red-200 dark:border-red-800">Выход</button>
+      </div>
+    </header>
+
+    <!-- Статистика -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white dark:bg-[#131c31] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <span class="text-xs text-slate-500 uppercase font-semibold">Всего заявок</span>
+        <div id="statTotal" class="text-2xl font-bold text-slate-800 dark:text-white mt-1">0</div>
+      </div>
+      <div class="bg-white dark:bg-[#131c31] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <span class="text-xs text-blue-500 uppercase font-semibold">Новые</span>
+        <div id="statNew" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">0</div>
+      </div>
+      <div class="bg-white dark:bg-[#131c31] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <span class="text-xs text-amber-500 uppercase font-semibold">В работе</span>
+        <div id="statProgress" class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</div>
+      </div>
+      <div class="bg-white dark:bg-[#131c31] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <span class="text-xs text-emerald-500 uppercase font-semibold">Решены</span>
+        <div id="statResolved" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0</div>
+      </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap gap-3 items-center">
+      <input type="text" id="searchQuery" oninput="loadTickets()" placeholder="Поиск по ФИО, номеру или проблеме..." 
+        class="text-sm p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg outline-none flex-grow">
+      
+      <select id="filterStatus" onchange="loadTickets()" class="text-sm p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg outline-none">
+        <option value="Все">Все статусы</option>
+        <option value="Новая">Новая</option>
+        <option value="В работе">В работе</option>
+        <option value="Решена">Решена</option>
+      </select>
+      <button onclick="loadTickets()" class="bg-indigo-600 text-white text-sm px-4 py-2.5 rounded-lg font-medium hover:bg-indigo-700">Обновить</button>
+    </div>
+
+    <!-- Таблица заявок -->
+    <div class="bg-white dark:bg-[#131c31] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500 dark:text-slate-400">
+          <tr>
+            <th class="p-3">Номер</th>
+            <th class="p-3">Студент</th>
+            <th class="p-3">Проблема</th>
+            <th class="p-3">Фото</th>
+            <th class="p-3">Ответ специалиста</th>
+            <th class="p-3">Статус</th>
+            <th class="p-3">Действие</th>
+          </tr>
+        </thead>
+        <tbody id="ticketsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ДИАЛОГОВОЕ ОКНО ОТВЕТА СПЕЦИАЛИСТА НА ТИКЕТ -->
+  <div id="replyModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[90vh]">
+      <button onclick="closeReplyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 text-lg">✕</button>
+      
+      <!-- Сверху: Данные студента -->
+      <div class="pb-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-start pr-8">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="modalTicketNumber" class="text-base font-extrabold text-indigo-600 dark:text-indigo-400">ТИК-1001</span>
+            <span id="modalTicketCategory" class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">Оборудование</span>
+          </div>
+          <div id="modalStudentName" class="text-sm font-bold text-slate-800 dark:text-white mt-1">Иванов Иван</div>
+          <div id="modalStudentCard" class="text-xs text-slate-400 font-mono">Студ. билет: #12345</div>
+        </div>
+        <span id="modalTicketStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold">Новая</span>
+      </div>
+
+      <!-- В центре: Диалог (Слева вопрос + фото, Справа ответ специалиста) -->
+      <div class="flex-1 overflow-y-auto space-y-4 py-4 pr-1">
+        
+        <!-- Слева: Вопрос заявителя -->
+        <div class="flex flex-col items-start max-w-[85%]">
+          <span class="text-[10px] text-slate-400 mb-1 ml-1">Заявитель:</span>
+          <div class="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-sm border border-slate-200 dark:border-slate-700 text-xs space-y-2">
+            <div id="modalTicketTitle" class="font-bold text-slate-800 dark:text-white"></div>
+            <div id="modalTicketDescription" class="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+            
+            <div id="modalPhotoContainer" class="hidden pt-1">
+              <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Прикреплённое фото:</span>
+              <img id="modalTicketPhoto" src="" class="max-h-48 rounded-xl border border-slate-300 dark:border-slate-600 object-cover cursor-pointer hover:opacity-90" onclick="window.open(this.src, '_blank')">
+            </div>
+          </div>
+        </div>
+
+        <!-- Справа: Ответ тех. специалиста -->
+        <div id="modalAdminReplyBubble" class="hidden flex-col items-end self-end max-w-[85%] ml-auto">
+          <span class="text-[10px] text-indigo-500 font-bold mb-1 mr-1">Тех. специалист (УПК):</span>
+          <div class="p-4 bg-indigo-600 text-white rounded-2xl rounded-tr-sm shadow-md text-xs leading-relaxed whitespace-pre-wrap">
+            <div id="modalAdminReplyText"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Снизу: Место, где тех. спец пишет ответ -->
+      <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Ваш ответ заявителю:</label>
+          <textarea id="replyTextInput" rows="3" placeholder="Напишите ответ студенту (например: «Проектор проверен, заменён кабель HDMI. Всё работает»)..." 
+            class="w-full text-xs p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-0.5">Новый статус:</label>
+            <select id="replyStatusSelect" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
+              <option value="В работе">В работе (взять на рассмотрение)</option>
+              <option value="Решена" selected>Решена (проблема устранена)</option>
+            </select>
+          </div>
+          <button onclick="sendAdminReply()" class="mt-4 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+            Отправить ответ
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const TOKEN = "Bearer upk-admin-session-token-2026";
+    let activeTicket = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      loadStats();
+      loadTickets();
+    });
+
+    function initTheme() {
+      const saved = localStorage.getItem('theme') || 'light';
+      applyTheme(saved);
+    }
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(isDark ? 'light' : 'dark');
+    }
+    function applyTheme(theme) {
+      const moon = document.getElementById('moonIcon');
+      const sun = document.getElementById('sunIcon');
+      const btn = document.getElementById('themeToggleBtn');
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        moon.classList.add('hidden');
+        sun.classList.remove('hidden');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        sun.classList.add('hidden');
+        moon.classList.remove('hidden');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    async function loadStats() {
+      const res = await fetch('/api/admin/stats', { headers: { 'Authorization': TOKEN } });
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('statTotal').textContent = data.total;
+      document.getElementById('statNew').textContent = data.new;
+      document.getElementById('statProgress').textContent = data.in_progress;
+      document.getElementById('statResolved').textContent = data.resolved;
+    }
+
+    async function loadTickets() {
+      const q = document.getElementById('searchQuery').value;
+      const st = document.getElementById('filterStatus').value;
+      const res = await fetch(`/api/admin/tickets?query=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}`, {
+        headers: { 'Authorization': TOKEN }
+      });
+      const tickets = await res.json();
+      const tbody = document.getElementById('ticketsTableBody');
+      tbody.innerHTML = '';
+
+      tickets.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition";
+        tr.onclick = (e) => {
+          if (!e.target.closest('button')) openReplyModal(t);
+        };
+
+        tr.innerHTML = `
+          <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400">${t.public_number}</td>
+          <td class="p-3 text-xs">
+            <div class="font-semibold text-slate-800 dark:text-slate-100">${t.student_name || 'Анонимно'}</div>
+            <div class="text-slate-400 font-mono">${t.student_card ? '#' + t.student_card : ''}</div>
+          </td>
+          <td class="p-3 text-xs">
+            <div class="font-semibold text-slate-800 dark:text-slate-100">${t.title} ${t.is_dangerous ? '<span class="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold">ОПАСНОСТЬ</span>' : ''}</div>
+            <div class="text-slate-500 truncate max-w-xs">${t.description}</div>
+          </td>
+          <td class="p-3 text-xs">
+            ${t.photo_url ? `<img src="${t.photo_url}" class="w-9 h-9 object-cover rounded-lg border border-slate-300">` : '—'}
+          </td>
+          <td class="p-3 text-xs">
+            ${t.admin_reply ? `<span class="text-emerald-600 dark:text-emerald-400 truncate max-w-[150px] block font-medium">✓ ${t.admin_reply}</span>` : '<span class="text-slate-400">Нет ответа</span>'}
+          </td>
+          <td class="p-3">
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : (t.status === 'В работе' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400')}">
+              ${t.status}
+            </span>
+          </td>
+          <td class="p-3">
+            <button onclick='event.stopPropagation(); openReplyModal(${JSON.stringify(t)})' class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
+              Диалог / Ответить
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Открытие диалога ответа
+    function openReplyModal(ticket) {
+      activeTicket = ticket;
+      document.getElementById('modalTicketNumber').textContent = ticket.public_number;
+      document.getElementById('modalTicketCategory').textContent = ticket.category;
+      document.getElementById('modalStudentName').textContent = ticket.student_name || 'Анонимный заявитель';
+      document.getElementById('modalStudentCard').textContent = ticket.student_card ? `Студ. билет: #${ticket.student_card}` : '';
+      document.getElementById('modalTicketStatusBadge').textContent = ticket.status;
+
+      document.getElementById('modalTicketTitle').textContent = ticket.title;
+      document.getElementById('modalTicketDescription').textContent = ticket.description;
+
+      // Фото
+      const photoBox = document.getElementById('modalPhotoContainer');
+      if (ticket.photo_url) {
+        photoBox.classList.remove('hidden');
+        document.getElementById('modalTicketPhoto').src = ticket.photo_url;
+      } else {
+        photoBox.classList.add('hidden');
+      }
+
+      // Ответ специалиста справа
+      const replyBubble = document.getElementById('modalAdminReplyBubble');
+      if (ticket.admin_reply) {
+        replyBubble.classList.remove('hidden');
+        document.getElementById('modalAdminReplyText').textContent = ticket.admin_reply;
+        document.getElementById('replyTextInput').value = ticket.admin_reply;
+      } else {
+        replyBubble.classList.add('hidden');
+        document.getElementById('replyTextInput').value = '';
+      }
+
+      document.getElementById('replyModal').classList.remove('hidden');
+    }
+
+    function closeReplyModal() {
+      document.getElementById('replyModal').classList.add('hidden');
+    }
+
+    // Отправка ответа
+    async function sendAdminReply() {
+      if (!activeTicket) return;
+      const reply = document.getElementById('replyTextInput').value.trim();
+      const status = document.getElementById('replyStatusSelect').value;
+
+      if (!reply) return alert("Введите текст ответа для заявителя.");
+
+      const res = await fetch(`/api/admin/tickets/${activeTicket.id}/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': TOKEN
+        },
+        body: JSON.stringify({ reply, status, assignee_name: "Инженер УПК" })
+      });
+
+      if (res.ok) {
+        closeReplyModal();
+        loadStats();
+        loadTickets();
+      } else {
+        alert("Ошибка при сохранении ответа");
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('admin_token');
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

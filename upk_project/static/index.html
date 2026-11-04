@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ru" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>УПК: Цифровой помощник</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {} }
+    }
+  </script>
+  <style>
+    * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
+
+    /* Вращение шестерёнок */
+    @keyframes spin-cw { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes spin-ccw { 0% { transform: rotate(0deg); } 100% { transform: rotate(-360deg); } }
+    .gear-main { animation: spin-cw 4s linear infinite; transform-origin: 75px 85px; }
+    .gear-sub { animation: spin-ccw 3s linear infinite; transform-origin: 40px 48px; }
+    .gear-small { animation: spin-cw 2.2s linear infinite; transform-origin: 115px 115px; }
+
+    /* Подкручивание центральной гайки ключом: силовой нажим и возврат */
+    @keyframes wrench-turn {
+      0% { transform: rotate(-35deg); }
+      35% { transform: rotate(-8deg); }
+      45% { transform: rotate(-10deg); }
+      75% { transform: rotate(-35deg); }
+      100% { transform: rotate(-35deg); }
+    }
+    .wrench-tool { 
+      animation: wrench-turn 1.25s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+      transform-origin: 75px 85px; 
+    }
+
+    /* 1. Падение инструментов вниз за край экрана */
+    .tools-falling { 
+      transform: translateY(130vh) rotate(50deg) !important; 
+      transition: transform 0.75s cubic-bezier(0.55, 0.055, 0.675, 0.19) !important; 
+    }
+
+    /* 2. Подъём размытия шторкой снизу вверх */
+    #preloader {
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+      transition: clip-path 0.85s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.4s ease 0.4s;
+    }
+    #preloader.curtain-up { 
+      clip-path: polygon(0 0, 100% 0, 100% 0, 0 0) !important; 
+      opacity: 0 !important; 
+      pointer-events: none !important; 
+    }
+
+    /* Анимации карточек */
+    .fold-up { transform: translateY(-40px) scale(0.96); opacity: 0; pointer-events: none; max-height: 0px !important; overflow: hidden; margin: 0 !important; padding: 0 !important; transition: all 0.5s ease; }
+    .rise-up { animation: riseAnimation 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes riseAnimation { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-[#0c1222] text-slate-800 dark:text-slate-100 min-h-screen flex items-center justify-center p-3 sm:p-6 overflow-x-hidden relative font-sans">
+
+  <!-- ================= PRELOADER ================= -->
+  <div id="preloader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-xl">
+    <div id="preloaderTools" class="relative w-48 h-48 transition-transform">
+      <svg class="w-full h-full drop-shadow-2xl" viewBox="0 0 160 160" fill="none">
+        <defs>
+          <!-- Стальной градиент инструмента -->
+          <linearGradient id="wrenchChrome" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="25%" stop-color="#e2e8f0"/>
+            <stop offset="60%" stop-color="#cbd5e1"/>
+            <stop offset="100%" stop-color="#94a3b8"/>
+          </linearGradient>
+          <!-- Металл гайки -->
+          <linearGradient id="nutGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="50%" stop-color="#e2e8f0"/>
+            <stop offset="100%" stop-color="#64748b"/>
+          </linearGradient>
+          <!-- Тень под ключом -->
+          <filter id="toolShadow" x="-20%" y="-20%" width="150%" height="150%">
+            <feDropShadow dx="2" dy="3" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.5"/>
+          </filter>
+        </defs>
+
+        <!-- Шестерня 2 (Слева вверху, синяя) -->
+        <g class="gear-sub">
+          <circle cx="40" cy="48" r="20" fill="#0284c7" stroke="#38bdf8" stroke-width="2.5"/>
+          <path d="M40 24v5M40 67v5M16 48h5M59 48h5M23 31l4 4M53 61l4 4M23 65l4-4M53 35l4-4" stroke="#bae6fd" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="40" cy="48" r="7" fill="#082f49"/>
+        </g>
+
+        <!-- Шестерня 3 (Справа внизу, зелёная) -->
+        <g class="gear-small">
+          <circle cx="115" cy="115" r="15" fill="#059669" stroke="#34d399" stroke-width="2"/>
+          <path d="M115 97v4M115 129v4M97 115h4M129 115h4M102 102l3 3M125 125l3 3M102 128l3-3M125 105l3-3" stroke="#a7f3d0" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="115" cy="115" r="5" fill="#064e3b"/>
+        </g>
+
+        <!-- Шестерня 1 (Центральная фиолетовая) -->
+        <g class="gear-main">
+          <circle cx="75" cy="85" r="28" fill="#4f46e5" stroke="#818cf8" stroke-width="3"/>
+          <path d="M75 50v8M75 112v8M40 85h8M102 85h8M50 60l6 6M94 104l6 6M50 110l6-6M94 66l6-6" stroke="#c7d2fe" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="75" cy="85" r="13" fill="#1e1b4b" stroke="#312e81" stroke-width="1.5"/>
+          <!-- Чёткая шестигранная гайка по центру -->
+          <polygon points="82.5,85 78.8,91.5 71.2,91.5 67.5,85 71.2,78.5 78.8,78.5" fill="url(#nutGrad)" stroke="#334155" stroke-width="1.2" stroke-linejoin="round"/>
+          <circle cx="75" cy="85" r="3.2" fill="#0f172a"/>
+        </g>
+
+        <!-- Рожковый гаечный ключ (надет прямо на шестигранную гайку) -->
+        <g class="wrench-tool" filter="url(#toolShadow)">
+          <g transform="translate(75, 85)">
+            <!-- Рожки, ручка и кольцо на конце -->
+            <path d="M -12,-7
+                     C -15,-7 -16,-11 -13,-14
+                     C -6,-19 8,-18 18,-11
+                     L 72,-5
+                     C 76,-10 84,-10 89,-5
+                     C 94,0 94,8 89,13
+                     C 84,18 76,18 72,13
+                     L 18,11
+                     C 8,18 -6,19 -13,14
+                     C -16,11 -15,7 -12,7
+                     L 0,7
+                     C 5,7 7,4 7,0
+                     C 7,-4 5,-7 0,-7
+                     Z" 
+                  fill="url(#wrenchChrome)" stroke="#334155" stroke-width="1.4" stroke-linejoin="round"/>
+            
+            <!-- Отверстие в кольце рукоятки -->
+            <circle cx="81" cy="4" r="5" fill="#0f172a" stroke="#475569" stroke-width="1.2"/>
+
+            <!-- Продольное ребро жёсткости -->
+            <rect x="24" y="2" width="44" height="4" rx="2" fill="#475569" opacity="0.45"/>
+            <rect x="25" y="2.5" width="42" height="1.5" rx="0.75" fill="#ffffff" opacity="0.85"/>
+            
+            <!-- Блик на верхнем рожке -->
+            <path d="M -10,-12 C -4,-15 8,-14 16,-8" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.9"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Индикатор загрузки -->
+    <div id="loaderProgressContainer" class="mt-8 w-56 flex flex-col items-center">
+      <div class="w-full bg-slate-700/50 rounded-full h-1.5 overflow-hidden border border-white/10 backdrop-blur-sm">
+        <div id="loaderProgressBar" class="h-full bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400 w-0 transition-all duration-75 ease-out"></div>
+      </div>
+      <span class="text-xs font-mono tracking-widest text-slate-300 mt-2.5">ЗАПУСК СИСТЕМЫ...</span>
+    </div>
+  </div>
+
+  <!-- ПОСЛЕДОВАТЕЛЬНЫЙ СКРИПТ ПРЕЛОАДЕРА -->
+  <script>
+    (function() {
+      const progressBar = document.getElementById('loaderProgressBar');
+      const preloader = document.getElementById('preloader');
+      const tools = document.getElementById('preloaderTools');
+      const progressContainer = document.getElementById('loaderProgressContainer');
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        if (progress > 100) progress = 100;
+        if (progressBar) progressBar.style.width = progress + '%';
+
+        if (progress === 100) {
+          clearInterval(interval);
+
+          // 1. Исчезает линия загрузки
+          setTimeout(() => {
+            if (progressContainer) {
+              progressContainer.style.transition = 'opacity 0.25s ease';
+              progressContainer.style.opacity = '0';
+            }
+
+            // 2. Инструменты падают вниз
+            setTimeout(() => {
+              if (tools) tools.classList.add('tools-falling');
+
+              // 3. Ровно по завершении падения шторка поднимается снизу вверх
+              setTimeout(() => {
+                if (preloader) {
+                  preloader.classList.add('curtain-up');
+                  setTimeout(() => { preloader.style.display = 'none'; }, 900);
+                }
+              }, 750);
+
+            }, 250);
+          }, 150);
+        }
+      }, 35);
+
+      setTimeout(() => {
+        if (preloader && preloader.style.display !== 'none') {
+          preloader.style.display = 'none';
+        }
+      }, 5000);
+    })();
+  </script>
+
+  <!-- ================= ОСНОВНОЙ ИНТЕРФЕЙС ================= -->
+  <main class="w-full max-w-xl bg-white dark:bg-[#131c31] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden relative backdrop-blur-sm">
+    
+    <!-- Шапка -->
+    <header class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="/static/logo2.jpg" alt="Логотип ДГУ" class="w-12 h-12 rounded-full object-cover shadow border border-slate-200 dark:border-slate-700 p-0.5 bg-white">
+        <div>
+          <h1 class="text-base font-bold text-slate-800 dark:text-white leading-tight">Цифровой помощник</h1>
+          <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400">УПК Колледжа ДГУ</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openQuickTrackModal()" title="Отследить по номеру" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition">
+          <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <span>Отследить</span>
+        </button>
+
+        <button id="authBtn" onclick="openAuthModal()" title="Войти в систему" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+          <span>Вход</span>
+        </button>
+
+        <button id="studentMenuBtn" onclick="openStudentCabinet()" title="Мои обращения" class="hidden w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border transition">
+          <svg id="moonIcon" class="w-5 h-5 text-slate-800 block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+          <svg id="sunIcon" class="w-5 h-5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- СЕКЦИЯ 1: ЧАТ И ВОПРОСЫ -->
+    <div id="chatSection" class="p-5 flex flex-col gap-4">
+      <div id="studentGreetingBadge" class="hidden text-xs py-1.5 px-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-xl font-medium"></div>
+
+      <div id="messagesHistory" class="hidden flex-col gap-3 max-h-[360px] overflow-y-auto pr-1"></div>
+
+      <div id="inputBox" class="flex flex-col gap-2">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Опишите ситуацию</label>
+        <textarea id="userInput" rows="3" placeholder="Например: «Не работает проектор», «В розетке искрит», «Как подключить Wi-Fi?»..." 
+          class="w-full text-sm p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 resize-none"></textarea>
+        
+        <button id="sendBtn" onclick="handleSendMessage()" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+          <span>Отправить вопрос</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- СЕКЦИЯ 2: ФОРМА ЗАЯВКИ С ПРИКРЕПЛЕНИЕМ ФОТО -->
+    <div id="ticketFormSection" class="hidden p-5 flex-col gap-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">Заявка тех. специалисту</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Обращение поступит дежурному инженеру УПК</p>
+        </div>
+        <button onclick="backToChat()" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">← Назад в чат</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase">Тема обращения</label>
+          <input type="text" id="formTitle" class="w-full text-sm p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase">Категория</label>
+          <select id="formCategory" class="w-full text-sm p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="Оборудование">Оборудование</option>
+            <option value="Электрика">Электрика</option>
+            <option value="Мебель">Мебель</option>
+            <option value="Сантехника">Сантехника</option>
+            <option value="Чистота">Чистота</option>
+            <option value="Прочее">Прочее</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase">Описание проблемы</label>
+          <textarea id="formDescription" rows="2" class="w-full text-sm p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase">Прикрепить фото поломки</label>
+          <div class="flex items-center gap-3">
+            <label class="cursor-pointer flex items-center gap-2 text-xs font-medium px-3 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-xl border border-slate-300 dark:border-slate-700 transition">
+              <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+              <span>Выбрать фото</span>
+              <input type="file" id="ticketPhotoInput" accept="image/*" class="hidden" onchange="previewPhoto(this)">
+            </label>
+            <span id="photoFileName" class="text-xs text-slate-500 truncate max-w-[200px]">Файл не выбран</span>
+          </div>
+          <div id="photoPreviewContainer" class="hidden mt-2 relative w-20 h-20 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700">
+            <img id="photoPreviewImg" src="" class="w-full h-full object-cover">
+            <button onclick="removePhoto()" class="absolute top-1 right-1 bg-black/60 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">✕</button>
+          </div>
+        </div>
+
+        <button onclick="submitFormalTicket()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm shadow-lg shadow-emerald-600/20 active:scale-[0.99] transition">
+          Оформить заявку
+        </button>
+      </div>
+    </div>
+
+    <!-- СЕКЦИЯ 3: КАРТОЧКА УСПЕШНОЙ РЕГИСТРАЦИИ -->
+    <div id="successCard" class="hidden p-6 text-center flex-col items-center gap-3">
+      <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-2xl">✓</div>
+      <h3 class="text-lg font-bold text-slate-800 dark:text-white">Заявка зарегистрирована</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Информация поступила в журнал тех. службы.</p>
+      
+      <div class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1 my-2">
+        <span class="text-xs text-slate-400">Номер обращения:</span>
+        <span id="ticketNumberBadge" class="text-lg font-extrabold text-indigo-600 dark:text-indigo-400">ТИК-1001</span>
+      </div>
+
+      <div class="flex w-full gap-2 mt-2">
+        <button id="viewCreatedTicketBtn" onclick="openDetailsByNumber(document.getElementById('ticketNumberBadge').textContent)" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition">
+          Просмотреть статус
+        </button>
+        <button onclick="resetAll()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition">
+          Новый вопрос
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- МОДАЛКА ВЫБОРА РОЛИ ДЛЯ ВХОДА -->
+  <div id="authChoiceModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2">✕</button>
+
+      <!-- Выбор роли (Студент / Тех. специалист) -->
+      <div id="roleSelectionView">
+        <h2 class="text-lg font-bold text-center text-slate-800 dark:text-white mb-2">Выберите режим входа</h2>
+        <p class="text-xs text-center text-slate-500 mb-6">Авторизуйтесь для сохранения и контроля ваших обращений</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Студент -->
+          <div onclick="selectStudentRole()" class="cursor-pointer group flex flex-col items-center justify-between p-5 bg-slate-50 dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-2xl transition duration-300 shadow-sm">
+            <div class="w-28 h-28 flex items-center justify-center mb-3">
+              <img src="/static/images.jpg" alt="Студент" onerror="this.src='/static/images.png'" class="max-w-full max-h-full object-contain group-hover:scale-105 transition">
+            </div>
+            <span class="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+              Войти как студент
+            </span>
+          </div>
+
+          <!-- Тех. специалист -->
+          <div onclick="selectTechRole()" class="cursor-pointer group flex flex-col items-center justify-between p-5 bg-slate-50 dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-2xl transition duration-300 shadow-sm">
+            <div class="w-28 h-28 flex items-center justify-center mb-3 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <img src="/static/8733.png" alt="Тех.специалист" class="max-w-full max-h-full object-contain group-hover:scale-105 transition">
+            </div>
+            <span class="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+              Войти как Тех.специалист
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Форма студента -->
+      <div id="studentFormView" class="hidden">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h3 class="text-base font-bold text-slate-800 dark:text-white">Авторизация студента</h3>
+          <button onclick="backToRoleChoice()" class="text-xs text-indigo-500 hover:underline">← Назад</button>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Фамилия</label>
+            <input type="text" id="studSurname" placeholder="Иванов" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Имя</label>
+            <input type="text" id="studName" placeholder="Иван" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Отчество</label>
+            <input type="text" id="studPatronymic" placeholder="Иванович" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Номер студенческого билета (5 цифр)</label>
+            <input type="text" id="studCard" maxlength="5" placeholder="12345" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono tracking-widest text-indigo-600 dark:text-indigo-400 font-bold">
+          </div>
+          <button onclick="submitStudentAuth()" class="w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg transition">
+            Войти и продолжить
+          </button>
+        </div>
+      </div>
+
+      <!-- Форма тех. специалиста -->
+      <div id="techFormView" class="hidden">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h3 class="text-base font-bold text-slate-800 dark:text-white">Вход для тех. персонала</h3>
+          <button onclick="backToRoleChoice()" class="text-xs text-indigo-500 hover:underline">← Назад</button>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Логин</label>
+            <input type="text" id="techLogin" value="" placeholder="Введите ваш логин" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Пароль</label>
+            <div class="relative">
+              <input type="password" id="techPassword" value="" placeholder="Введите пароль" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 pr-10">
+              <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              </button>
+            </div>
+          </div>
+          <button onclick="submitTechAuth()" class="w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg transition">
+            Авторизоваться в панели
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- МОДАЛКА БЫСТРОГО ОТСЛЕЖИВАНИЯ ПО НОМЕРУ / ЦИФРАМ -->
+  <div id="quickTrackModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up">
+      <button onclick="closeQuickTrackModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2">✕</button>
+      <h3 class="text-base font-bold text-slate-800 dark:text-white mb-1">Отслеживание обращения</h3>
+      <p class="text-xs text-slate-500 mb-4">Введите номер заявки (например, ТИК-1001 или просто 1001)</p>
+      
+      <div class="flex gap-2">
+        <input type="text" id="trackSearchInput" placeholder="Номер или 4 цифры..." class="flex-1 text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+        <button onclick="performQuickTrack()" class="px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-md transition">Найти</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЦЕНТРАЛИЗОВАННОЕ ОКНО ДЕТАЛЕЙ ЗАЯВКИ С ОТВЕТОМ ТЕХ. СПЕЦИАЛИСТА -->
+  <div id="ticketDetailsModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[90vh]">
+      <button onclick="closeTicketDetailsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2">✕</button>
+      
+      <div class="pb-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-start pr-8">
+        <div>
+          <span id="detailTicketNumber" class="text-lg font-extrabold text-indigo-600 dark:text-indigo-400">ТИК-1001</span>
+          <div id="detailTicketCategory" class="text-xs text-slate-500 mt-0.5">Категория: Оборудование</div>
+        </div>
+        <span id="detailTicketStatus" class="px-3 py-1 rounded-full text-xs font-bold">В работе</span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-4 py-4 pr-1">
+        <!-- Вопрос студента -->
+        <div class="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+          <div class="flex justify-between text-xs text-slate-400">
+            <span id="detailStudentAuthor" class="font-semibold text-slate-600 dark:text-slate-300">Вопрос заявителя:</span>
+            <span id="detailTicketDate"></span>
+          </div>
+          <div id="detailTicketTitle" class="font-bold text-sm text-slate-800 dark:text-white"></div>
+          <div id="detailTicketDescription" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+          
+          <div id="detailPhotoContainer" class="hidden pt-2">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Прикреплённое фото:</span>
+            <img id="detailTicketPhoto" src="" class="max-h-48 rounded-xl border border-slate-300 dark:border-slate-600 object-cover cursor-pointer hover:opacity-95" onclick="window.open(this.src, '_blank')">
+          </div>
+        </div>
+
+        <!-- Ответ тех. специалиста -->
+        <div id="detailAdminReplyContainer" class="p-4 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800 space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">🛠</div>
+            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wide">Ответ тех. специалиста:</span>
+          </div>
+          <div id="detailAdminReplyText" class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-medium"></div>
+        </div>
+
+        <div id="detailNoReplyYet" class="hidden text-center py-4 text-xs text-slate-400 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+          ⏳ Заявка ожидает ответа дежурного тех. специалиста
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- КАБИНЕТ СТУДЕНТА (3 ПОЛОСКИ) -->
+  <div id="studentCabinetModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative flex flex-col max-h-[85vh] rise-up">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <h2 id="cabinetStudentName" class="text-base font-bold text-slate-800 dark:text-white"></h2>
+          <p id="cabinetStudentCard" class="text-xs text-slate-500 font-mono"></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="logoutStudent()" class="text-xs text-red-500 bg-red-50 dark:bg-red-950/40 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-100">Выйти</button>
+          <button onclick="closeStudentCabinet()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 text-lg">✕</button>
+        </div>
+      </div>
+
+      <div class="flex gap-2 my-3 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold">
+        <button onclick="filterCabinetTickets('new')" id="tabNew" class="flex-1 py-2 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400 transition">
+          Ожидающие (<span id="countNew">0</span>)
+        </button>
+        <button onclick="filterCabinetTickets('progress')" id="tabProgress" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition">
+          В работе (<span id="countProgress">0</span>)
+        </button>
+        <button onclick="filterCabinetTickets('resolved')" id="tabResolved" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition">
+          Решенные (<span id="countResolved">0</span>)
+        </button>
+      </div>
+
+      <div id="cabinetTicketsList" class="flex-1 overflow-y-auto space-y-3 pr-1 py-1"></div>
+    </div>
+  </div>
+
+  <!-- ОСНОВНОЙ СКРИПТ -->
+  <script>
+    let lastAiData = null;
+    let attachedPhotoBase64 = null;
+    let allStudentTickets = [];
+    let currentCabinetTab = 'new';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      try { initTheme(); } catch (e) { console.error("Theme error:", e); }
+      try { checkStudentSession(); } catch (e) { console.error("Session error:", e); }
+    });
+
+    function initTheme() {
+      const saved = localStorage.getItem('theme') || 'light';
+      applyTheme(saved);
+    }
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(isDark ? 'light' : 'dark');
+    }
+    function applyTheme(theme) {
+      const moon = document.getElementById('moonIcon');
+      const sun = document.getElementById('sunIcon');
+      const btn = document.getElementById('themeToggleBtn');
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        if (moon) moon.classList.add('hidden');
+        if (sun) sun.classList.remove('hidden');
+        if (btn) btn.className = "w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border border-slate-700 bg-slate-800 text-white";
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        if (sun) sun.classList.add('hidden');
+        if (moon) moon.classList.remove('hidden');
+        if (btn) btn.className = "w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border border-slate-200 bg-white text-slate-800";
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    function togglePasswordVisibility() {
+      const pwd = document.getElementById('techPassword');
+      if (pwd) {
+        pwd.type = (pwd.type === 'password') ? 'text' : 'password';
+      }
+    }
+
+    function checkStudentSession() {
+      try {
+        const saved = localStorage.getItem('upk_student');
+        const authBtn = document.getElementById('authBtn');
+        const menuBtn = document.getElementById('studentMenuBtn');
+        const badge = document.getElementById('studentGreetingBadge');
+
+        if (saved) {
+          const student = JSON.parse(saved);
+          if (authBtn) authBtn.classList.add('hidden');
+          if (menuBtn) menuBtn.classList.remove('hidden');
+          if (badge) {
+            badge.classList.remove('hidden');
+            badge.innerHTML = `Вы вошли как: <b>${student.fio}</b> (Билет: #${student.card})`;
+          }
+        } else {
+          if (authBtn) authBtn.classList.remove('hidden');
+          if (menuBtn) menuBtn.classList.add('hidden');
+          if (badge) badge.classList.add('hidden');
+        }
+      } catch (err) {
+        localStorage.removeItem('upk_student');
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById('authChoiceModal').classList.remove('hidden');
+      backToRoleChoice();
+    }
+    function closeAuthModal() {
+      document.getElementById('authChoiceModal').classList.add('hidden');
+    }
+    function backToRoleChoice() {
+      document.getElementById('roleSelectionView').classList.remove('hidden');
+      document.getElementById('studentFormView').classList.add('hidden');
+      document.getElementById('techFormView').classList.add('hidden');
+    }
+    function selectStudentRole() {
+      document.getElementById('roleSelectionView').classList.add('hidden');
+      document.getElementById('studentFormView').classList.remove('hidden');
+    }
+    function selectTechRole() {
+      document.getElementById('roleSelectionView').classList.add('hidden');
+      document.getElementById('techFormView').classList.remove('hidden');
+      document.getElementById('techLogin').value = '';
+      document.getElementById('techPassword').value = '';
+    }
+
+    function submitStudentAuth() {
+      const surname = document.getElementById('studSurname').value.trim();
+      const name = document.getElementById('studName').value.trim();
+      const patronymic = document.getElementById('studPatronymic').value.trim();
+      const card = document.getElementById('studCard').value.trim();
+
+      if (!surname || !name || !patronymic) return alert("Заполните ФИО полностью.");
+      if (!/^\d{5}$/.test(card)) return alert("Студенческий билет должен состоять ровно из 5 цифр!");
+
+      localStorage.removeItem('admin_token');
+      const fio = `${surname} ${name} ${patronymic}`;
+      localStorage.setItem('upk_student', JSON.stringify({ fio, card }));
+      closeAuthModal();
+      checkStudentSession();
+    }
+
+    async function submitTechAuth() {
+      const login = document.getElementById('techLogin').value.trim();
+      const password = document.getElementById('techPassword').value.trim();
+      if (!login || !password) return alert("Введите логин и пароль.");
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ login, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.removeItem('upk_student');
+          localStorage.setItem('admin_token', data.token);
+          window.location.href = '/admin';
+        } else {
+          alert(data.detail || "Неверный логин или пароль");
+        }
+      } catch (e) {
+        alert("Ошибка сервера при авторизации");
+      }
+    }
+
+    function openQuickTrackModal() {
+      document.getElementById('quickTrackModal').classList.remove('hidden');
+      document.getElementById('trackSearchInput').value = '';
+    }
+    function closeQuickTrackModal() {
+      document.getElementById('quickTrackModal').classList.add('hidden');
+    }
+    function performQuickTrack() {
+      const query = document.getElementById('trackSearchInput').value.trim();
+      if (!query) return alert("Введите номер тикета или токен.");
+      closeQuickTrackModal();
+      openDetailsByNumber(query);
+    }
+
+    async function openDetailsByNumber(query) {
+      try {
+        const res = await fetch(`/api/tickets/track/${encodeURIComponent(query)}`);
+        if (!res.ok) return alert("Заявка с таким номером не найдена.");
+        const data = await res.json();
+        const t = data.ticket;
+
+        document.getElementById('detailTicketNumber').textContent = t.public_number;
+        document.getElementById('detailTicketCategory').textContent = `Категория: ${t.category}`;
+        document.getElementById('detailTicketTitle').textContent = t.title;
+        document.getElementById('detailTicketDescription').textContent = t.description;
+        document.getElementById('detailTicketDate').textContent = t.created_at;
+        document.getElementById('detailStudentAuthor').textContent = t.student_name ? `Заявитель: ${t.student_name}` : 'Заявитель (анонимно)';
+
+        const st = document.getElementById('detailTicketStatus');
+        st.textContent = t.status;
+        if (t.status === 'Решена') st.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400';
+        else if (t.status === 'В работе') st.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400';
+        else st.className = 'px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400';
+
+        const photoCont = document.getElementById('detailPhotoContainer');
+        if (t.photo_url) {
+          photoCont.classList.remove('hidden');
+          document.getElementById('detailTicketPhoto').src = t.photo_url;
+        } else {
+          photoCont.classList.add('hidden');
+        }
+
+        const replyCont = document.getElementById('detailAdminReplyContainer');
+        const noReply = document.getElementById('detailNoReplyYet');
+        if (t.admin_reply) {
+          replyCont.classList.remove('hidden');
+          noReply.classList.add('hidden');
+          document.getElementById('detailAdminReplyText').textContent = t.admin_reply;
+        } else {
+          replyCont.classList.add('hidden');
+          noReply.classList.remove('hidden');
+        }
+
+        document.getElementById('ticketDetailsModal').classList.remove('hidden');
+      } catch (e) {
+        alert("Ошибка загрузки данных тикета.");
+      }
+    }
+    function closeTicketDetailsModal() {
+      document.getElementById('ticketDetailsModal').classList.add('hidden');
+    }
+
+    async function openStudentCabinet() {
+      const saved = localStorage.getItem('upk_student');
+      if (!saved) return;
+      const student = JSON.parse(saved);
+
+      document.getElementById('cabinetStudentName').textContent = student.fio;
+      document.getElementById('cabinetStudentCard').textContent = `Студ. билет: #${student.card}`;
+      document.getElementById('studentCabinetModal').classList.remove('hidden');
+
+      const res = await fetch(`/api/student/tickets?student_card=${encodeURIComponent(student.card)}`);
+      allStudentTickets = await res.json();
+      updateCabinetStats();
+      filterCabinetTickets(currentCabinetTab);
+    }
+    function closeStudentCabinet() {
+      document.getElementById('studentCabinetModal').classList.add('hidden');
+    }
+    function logoutStudent() {
+      localStorage.removeItem('upk_student');
+      closeStudentCabinet();
+      checkStudentSession();
+    }
+    function updateCabinetStats() {
+      const newCount = allStudentTickets.filter(t => t.status === 'Новая').length;
+      const progressCount = allStudentTickets.filter(t => ['В работе', 'На рассмотрении', 'Назначен исполнитель'].includes(t.status)).length;
+      const resolvedCount = allStudentTickets.filter(t => t.status === 'Решена').length;
+      document.getElementById('countNew').textContent = newCount;
+      document.getElementById('countProgress').textContent = progressCount;
+      document.getElementById('countResolved').textContent = resolvedCount;
+    }
+
+    function filterCabinetTickets(tab) {
+      currentCabinetTab = tab;
+      const tabs = ['tabNew', 'tabProgress', 'tabResolved'];
+      tabs.forEach(t => document.getElementById(t).className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition");
+
+      let filtered = [];
+      if (tab === 'new') {
+        document.getElementById('tabNew').className = "flex-1 py-2 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400 font-bold transition";
+        filtered = allStudentTickets.filter(t => t.status === 'Новая');
+      } else if (tab === 'progress') {
+        document.getElementById('tabProgress').className = "flex-1 py-2 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-amber-600 dark:text-amber-400 font-bold transition";
+        filtered = allStudentTickets.filter(t => ['В работе', 'На рассмотрении', 'Назначен исполнитель'].includes(t.status));
+      } else {
+        document.getElementById('tabResolved').className = "flex-1 py-2 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400 font-bold transition";
+        filtered = allStudentTickets.filter(t => t.status === 'Решена');
+      }
+
+      const container = document.getElementById('cabinetTicketsList');
+      container.innerHTML = '';
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">В этом разделе нет обращений</div>`;
+        return;
+      }
+
+      filtered.forEach(t => {
+        const item = document.createElement('div');
+        item.onclick = () => { closeStudentCabinet(); openDetailsByNumber(t.public_number); };
+        item.className = "cursor-pointer p-4 bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/40 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs space-y-1.5 transition";
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-indigo-600 dark:text-indigo-400">${t.public_number}</span>
+            <span class="px-2 py-0.5 rounded-md font-bold ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : (t.status === 'В работе' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400')}">${t.status}</span>
+          </div>
+          <div class="font-bold text-slate-800 dark:text-slate-100">${t.title}</div>
+          <div class="text-slate-500 truncate">${t.description}</div>
+          ${t.admin_reply ? '<div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Есть ответ специалиста</div>' : ''}
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function previewPhoto(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById('photoFileName').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          attachedPhotoBase64 = e.target.result;
+          document.getElementById('photoPreviewImg').src = attachedPhotoBase64;
+          document.getElementById('photoPreviewContainer').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    function removePhoto() {
+      attachedPhotoBase64 = null;
+      document.getElementById('ticketPhotoInput').value = '';
+      document.getElementById('photoFileName').textContent = 'Файл не выбран';
+      document.getElementById('photoPreviewContainer').classList.add('hidden');
+    }
+
+    async function handleSendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      btn.innerHTML = `Анализ...`;
+
+      const history = document.getElementById('messagesHistory');
+      history.classList.remove('hidden');
+      history.classList.add('flex');
+      appendMessage('user', text);
+      input.value = '';
+
+      try {
+        const res = await fetch('/api/tickets/analyze', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ text })
+        });
+        const data = await res.json();
+        lastAiData = data;
+        appendMessage('ai', data.ai_answer, data);
+
+        if (data.type === 'call_support') {
+          setTimeout(() => openFormalTicketForm(text, data), 1200);
+        }
+      } catch (e) {
+        appendMessage('ai', 'Сервис временно перегружен. Вы можете сразу оформить заявку.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Отправить вопрос</span>`;
+      }
+    }
+
+    function appendMessage(sender, text, meta = null) {
+      const history = document.getElementById('messagesHistory');
+      const div = document.createElement('div');
+      if (sender === 'user') {
+        div.className = "self-end max-w-[85%] bg-indigo-600 text-white text-sm p-3.5 rounded-2xl rounded-tr-sm shadow-md";
+        div.textContent = text;
+      } else {
+        div.className = "self-start max-w-[90%] bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 text-sm p-4 rounded-2xl rounded-tl-sm shadow-sm flex flex-col gap-2";
+        let headerBadge = '';
+        if (meta && meta.is_dangerous) headerBadge = `<span class="self-start text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400 px-2 py-0.5 rounded-md">⚠️ ОПАСНОСТЬ</span>`;
+        let actionBtn = '';
+        if (meta && (meta.should_create_ticket || meta.is_dangerous)) {
+          actionBtn = `<button onclick="openFormalTicketForm()" class="mt-2 self-start text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">Передать тех. специалисту →</button>`;
+        }
+        div.innerHTML = `${headerBadge}<div>${text}</div>${actionBtn}`;
+      }
+      history.appendChild(div);
+      history.scrollTop = history.scrollHeight;
+    }
+
+    function openFormalTicketForm(text = null, meta = null) {
+      const currentMeta = meta || lastAiData;
+      const currentText = text || (currentMeta ? currentMeta.suggested_title : '') || '';
+
+      document.getElementById('chatSection').classList.add('fold-up');
+      setTimeout(() => {
+        document.getElementById('chatSection').classList.add('hidden');
+        document.getElementById('ticketFormSection').classList.remove('hidden');
+        document.getElementById('ticketFormSection').classList.add('flex', 'rise-up');
+        document.getElementById('formTitle').value = (currentMeta && currentMeta.suggested_title) ? currentMeta.suggested_title : "Обращение в УПК";
+        document.getElementById('formDescription').value = currentText;
+        if (currentMeta && currentMeta.suggested_category) {
+          document.getElementById('formCategory').value = currentMeta.suggested_category;
+        }
+      }, 350);
+    }
+    function backToChat() {
+      document.getElementById('ticketFormSection').classList.add('hidden');
+      document.getElementById('chatSection').classList.remove('hidden', 'fold-up');
+    }
+
+    async function submitFormalTicket() {
+      const title = document.getElementById('formTitle').value;
+      const category = document.getElementById('formCategory').value;
+      const description = document.getElementById('formDescription').value;
+
+      let studentName = null;
+      let studentCard = null;
+      const savedStudent = localStorage.getItem('upk_student');
+      if (savedStudent) {
+        const s = JSON.parse(savedStudent);
+        studentName = s.fio;
+        studentCard = s.card;
+      }
+
+      const res = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          title, description, category,
+          is_dangerous: lastAiData ? lastAiData.is_dangerous : false,
+          student_name: studentName,
+          student_card: studentCard,
+          photo_base64: attachedPhotoBase64
+        })
+      });
+
+      const data = await res.json();
+      document.getElementById('ticketFormSection').classList.add('hidden');
+      document.getElementById('successCard').classList.remove('hidden');
+      document.getElementById('successCard').classList.add('flex', 'rise-up');
+      document.getElementById('ticketNumberBadge').textContent = data.public_number;
+    }
+
+    function resetAll() {
+      document.getElementById('successCard').classList.add('hidden');
+      document.getElementById('chatSection').classList.remove('hidden', 'fold-up');
+      document.getElementById('messagesHistory').innerHTML = '';
+      document.getElementById('messagesHistory').classList.add('hidden');
+      document.getElementById('userInput').value = '';
+      removePhoto();
+    }
+  </script>
+</body>
+</html>
