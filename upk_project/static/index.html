@@ -21,7 +21,7 @@
     .gear-sub { animation: spin-ccw 3s linear infinite; transform-origin: 40px 48px; }
     .gear-small { animation: spin-cw 2.2s linear infinite; transform-origin: 115px 115px; }
 
-    /* Подкручивание центральной гайки ключом: силовой нажим и возврат */
+    /* Подкручивание центральной гайки ключом */
     @keyframes wrench-turn {
       0% { transform: rotate(-35deg); }
       35% { transform: rotate(-8deg); }
@@ -34,13 +34,13 @@
       transform-origin: 75px 85px; 
     }
 
-    /* 1. Падение инструментов вниз за край экрана */
+    /* Падение инструментов вниз */
     .tools-falling { 
       transform: translateY(130vh) rotate(50deg) !important; 
       transition: transform 0.75s cubic-bezier(0.55, 0.055, 0.675, 0.19) !important; 
     }
 
-    /* 2. Подъём размытия шторкой снизу вверх */
+    /* Подъём размытия шторкой снизу вверх */
     #preloader {
       clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
       transition: clip-path 0.85s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.4s ease 0.4s;
@@ -64,20 +64,17 @@
     <div id="preloaderTools" class="relative w-48 h-48 transition-transform">
       <svg class="w-full h-full drop-shadow-2xl" viewBox="0 0 160 160" fill="none">
         <defs>
-          <!-- Стальной градиент инструмента -->
           <linearGradient id="wrenchChrome" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#ffffff"/>
             <stop offset="25%" stop-color="#e2e8f0"/>
             <stop offset="60%" stop-color="#cbd5e1"/>
             <stop offset="100%" stop-color="#94a3b8"/>
           </linearGradient>
-          <!-- Металл гайки -->
           <linearGradient id="nutGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#ffffff"/>
             <stop offset="50%" stop-color="#e2e8f0"/>
             <stop offset="100%" stop-color="#64748b"/>
           </linearGradient>
-          <!-- Тень под ключом -->
           <filter id="toolShadow" x="-20%" y="-20%" width="150%" height="150%">
             <feDropShadow dx="2" dy="3" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.5"/>
           </filter>
@@ -102,15 +99,13 @@
           <circle cx="75" cy="85" r="28" fill="#4f46e5" stroke="#818cf8" stroke-width="3"/>
           <path d="M75 50v8M75 112v8M40 85h8M102 85h8M50 60l6 6M94 104l6 6M50 110l6-6M94 66l6-6" stroke="#c7d2fe" stroke-width="7" stroke-linecap="round"/>
           <circle cx="75" cy="85" r="13" fill="#1e1b4b" stroke="#312e81" stroke-width="1.5"/>
-          <!-- Чёткая шестигранная гайка по центру -->
           <polygon points="82.5,85 78.8,91.5 71.2,91.5 67.5,85 71.2,78.5 78.8,78.5" fill="url(#nutGrad)" stroke="#334155" stroke-width="1.2" stroke-linejoin="round"/>
           <circle cx="75" cy="85" r="3.2" fill="#0f172a"/>
         </g>
 
-        <!-- Рожковый гаечный ключ (надет прямо на шестигранную гайку) -->
+        <!-- Рожковый гаечный ключ -->
         <g class="wrench-tool" filter="url(#toolShadow)">
           <g transform="translate(75, 85)">
-            <!-- Рожки, ручка и кольцо на конце -->
             <path d="M -12,-7
                      C -15,-7 -16,-11 -13,-14
                      C -6,-19 8,-18 18,-11
@@ -126,15 +121,9 @@
                      C 7,-4 5,-7 0,-7
                      Z" 
                   fill="url(#wrenchChrome)" stroke="#334155" stroke-width="1.4" stroke-linejoin="round"/>
-            
-            <!-- Отверстие в кольце рукоятки -->
             <circle cx="81" cy="4" r="5" fill="#0f172a" stroke="#475569" stroke-width="1.2"/>
-
-            <!-- Продольное ребро жёсткости -->
             <rect x="24" y="2" width="44" height="4" rx="2" fill="#475569" opacity="0.45"/>
             <rect x="25" y="2.5" width="42" height="1.5" rx="0.75" fill="#ffffff" opacity="0.85"/>
-            
-            <!-- Блик на верхнем рожке -->
             <path d="M -10,-12 C -4,-15 8,-14 16,-8" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.9"/>
           </g>
         </g>
@@ -150,7 +139,7 @@
     </div>
   </div>
 
-  <!-- ПОСЛЕДОВАТЕЛЬНЫЙ СКРИПТ ПРЕЛОАДЕРА -->
+  <!-- СКРИПТ ПРЕЛОАДЕРА -->
   <script>
     (function() {
       const progressBar = document.getElementById('loaderProgressBar');
@@ -167,18 +156,15 @@
         if (progress === 100) {
           clearInterval(interval);
 
-          // 1. Исчезает линия загрузки
           setTimeout(() => {
             if (progressContainer) {
               progressContainer.style.transition = 'opacity 0.25s ease';
               progressContainer.style.opacity = '0';
             }
 
-            // 2. Инструменты падают вниз
             setTimeout(() => {
               if (tools) tools.classList.add('tools-falling');
 
-              // 3. Ровно по завершении падения шторка поднимается снизу вверх
               setTimeout(() => {
                 if (preloader) {
                   preloader.classList.add('curtain-up');
@@ -195,7 +181,7 @@
         if (preloader && preloader.style.display !== 'none') {
           preloader.style.display = 'none';
         }
-      }, 5000);
+      }, 4000);
     })();
   </script>
 
@@ -304,7 +290,7 @@
       </div>
     </div>
 
-    <!-- СЕКЦИЯ 3: КАРТОЧКА УСПЕШНОЙ РЕГИСТРАЦИИ -->
+    <!-- СЕКЦИЯ 3: КАРТОЧКА УСПЕХА -->
     <div id="successCard" class="hidden p-6 text-center flex-col items-center gap-3">
       <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-2xl">✓</div>
       <h3 class="text-lg font-bold text-slate-800 dark:text-white">Заявка зарегистрирована</h3>
@@ -327,12 +313,98 @@
 
   </main>
 
+  <!-- ================= КНОПКА FAQ (СТРОГО СЛЕВА ВНИЗУ) ================= -->
+  <button onclick="openFaqModal()" class="fixed bottom-5 left-5 z-30 flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-white/90 dark:bg-[#131c31]/90 backdrop-blur-md shadow-xl border border-slate-200/80 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:scale-105 active:scale-95 transition-all group">
+    <span class="w-6 h-6 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs group-hover:bg-indigo-600 group-hover:text-white transition">?</span>
+    <span>FAQ и Справка</span>
+  </button>
+
+  <!-- ================= МОДАЛКА FAQ ================= -->
+  <div id="faqModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[90vh]">
+      <button onclick="closeFaqModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 text-lg">✕</button>
+
+      <div id="faqChoiceView">
+        <h2 class="text-lg font-bold text-center text-slate-800 dark:text-white mb-2">Справочный центр</h2>
+        <p class="text-xs text-center text-slate-500 mb-6">Выберите интересующий раздел информации</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div onclick="openFaqDetail('about-site')" class="cursor-pointer group flex flex-col items-center justify-between p-6 bg-slate-50 dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-2xl transition duration-300 shadow-sm text-center">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition shadow-inner">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 mb-1">О сайте</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">Возможности ИИ, как вызвать специалиста и подать обращение</p>
+          </div>
+
+          <div onclick="openFaqDetail('about-us')" class="cursor-pointer group flex flex-col items-center justify-between p-6 bg-slate-50 dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-2xl transition duration-300 shadow-sm text-center">
+            <div class="w-16 h-16 rounded-2xl bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center mb-4 group-hover:scale-110 transition shadow-inner">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            </div>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 mb-1">О нас</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">Команда разработчиков, создатели концепции и тестировщики</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="faqSiteView" class="hidden flex-col flex-1 overflow-y-auto pr-1">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-slate-800">
+          <h3 class="text-base font-bold text-slate-800 dark:text-white">О платформе «Цифровой помощник»</h3>
+          <button onclick="backToFaqChoice()" class="text-xs text-indigo-500 hover:underline">← Назад к разделам</button>
+        </div>
+        <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <h4 class="font-bold text-slate-800 dark:text-white mb-1">🤖 Автоматический анализ поломок</h4>
+            <p>В систему интегрирована нейросеть (Gemini), которая моментально определяет характер проблемы, категорию оборудования и риск аварийной опасности.</p>
+          </div>
+          
+          <div class="p-3.5 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800">
+            <h4 class="font-bold text-indigo-700 dark:text-indigo-400 mb-1">✍️ Как написать тех. специалисту</h4>
+            <p class="mb-1.5">Связаться с дежурным сотрудником технической службы можно двумя способами:</p>
+            <ul class="list-disc list-inside space-y-1 text-slate-700 dark:text-slate-300">
+              <li>Напишите в поле ввода фразу <b>«позови поддержку»</b>, <b>«нужен человек»</b> или <b>«оператор»</b> — чат автоматически свернётся и откроет карточку официальной заявки.</li>
+              <li>Если в ответ на вопрос нейросеть выявила неисправность, нажмите кнопку <b>«Передать тех. специалисту →»</b> под сообщением ИИ.</li>
+              <li>В открывшейся форме можно подробно описать неполадку, указать аудиторию и прикрепить фото поломки.</li>
+            </ul>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <h4 class="font-bold text-slate-800 dark:text-white mb-1">📱 Удобный трекинг обращений</h4>
+            <p>Каждая оформленная заявка получает персональный номер (например, ТИК-1001). Студенты и преподаватели могут в один клик отслеживать этап выполнения через кнопку «Отследить» в шапке сайта.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="faqAboutView" class="hidden flex-col flex-1 overflow-y-auto pr-1">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-slate-800">
+          <h3 class="text-base font-bold text-slate-800 dark:text-white">Команда проекта</h3>
+          <button onclick="backToFaqChoice()" class="text-xs text-indigo-500 hover:underline">← Назад к разделам</button>
+        </div>
+        <div class="space-y-3 text-xs leading-relaxed">
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <h4 class="font-bold text-slate-800 dark:text-white text-sm mb-1">Кадиров Далгат</h4>
+            <p class="text-slate-600 dark:text-slate-300">Разработчик сайта, структуры и логики, при помощи Google Argon Ai.</p>
+          </div>
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <h4 class="font-bold text-slate-800 dark:text-white text-sm mb-1">Гюльалиева Амина</h4>
+            <p class="text-slate-600 dark:text-slate-300">Человек, который давал рекомендации при разработке логики работы сайта и самого web-дизайна.</p>
+          </div>
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <h4 class="font-bold text-slate-800 dark:text-white text-sm mb-1">Абакаров Джамал</h4>
+            <p class="text-slate-600 dark:text-slate-300">Лицо, представляющее этот проект, он же и тестер сайта на работоспособность.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- МОДАЛКА ВЫБОРА РОЛИ ДЛЯ ВХОДА -->
   <div id="authChoiceModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up">
       <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2">✕</button>
 
-      <!-- Выбор роли (Студент / Тех. специалист) -->
+      <!-- Выбор роли -->
       <div id="roleSelectionView">
         <h2 class="text-lg font-bold text-center text-slate-800 dark:text-white mb-2">Выберите режим входа</h2>
         <p class="text-xs text-center text-slate-500 mb-6">Авторизуйтесь для сохранения и контроля ваших обращений</p>
@@ -389,30 +461,60 @@
         </div>
       </div>
 
-      <!-- Форма тех. специалиста -->
+      <!-- Форма тех. специалиста (С ПОДДЕРЖКОЙ GOOGLE AUTHENTICATOR) -->
       <div id="techFormView" class="hidden">
-        <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h3 class="text-base font-bold text-slate-800 dark:text-white">Вход для тех. персонала</h3>
-          <button onclick="backToRoleChoice()" class="text-xs text-indigo-500 hover:underline">← Назад</button>
-        </div>
-        <div class="space-y-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Логин</label>
-            <input type="text" id="techLogin" value="" placeholder="Введите ваш логин" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+        
+        <!-- Шаг 1: Логин и пароль -->
+        <div id="techStepPassword">
+          <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-slate-800 dark:text-white">Вход для тех. персонала</h3>
+            <button onclick="backToRoleChoice()" class="text-xs text-indigo-500 hover:underline">← Назад</button>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Пароль</label>
-            <div class="relative">
-              <input type="password" id="techPassword" value="" placeholder="Введите пароль" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 pr-10">
-              <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-              </button>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Логин</label>
+              <input type="text" id="techLogin" value="" placeholder="Введите ваш логин" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Пароль</label>
+              <div class="relative">
+                <input type="password" id="techPassword" value="" placeholder="Введите пароль" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 pr-10">
+                <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                  <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+              </div>
+            </div>
+            <button onclick="submitTechAuth()" class="w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg transition">
+              Авторизоваться в панели
+            </button>
           </div>
-          <button onclick="submitTechAuth()" class="w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg transition">
-            Авторизоваться в панели
+        </div>
+
+        <!-- Шаг 2: Ввод 6-значного кода 2FA (появляется если включена защита) -->
+        <div id="techStep2Fa" class="hidden space-y-4 rise-up">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🛡️</span>
+              <h3 class="text-base font-bold text-slate-800 dark:text-white">Двухфакторная защита</h3>
+            </div>
+            <button onclick="backToPasswordStep()" class="text-xs text-indigo-500 hover:underline">← Назад</button>
+          </div>
+          
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Откройте приложение <b>Google Authenticator</b> на телефоне и введите текущий 6-значный код подтверждения:
+          </p>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Код из приложения (6 цифр)</label>
+            <input type="text" id="tech2FaCodeInput" maxlength="6" placeholder="000000" 
+              class="w-full text-center text-xl tracking-[0.4em] font-mono p-3 bg-slate-50 dark:bg-slate-800 border-2 border-indigo-500/50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600 dark:text-indigo-400">
+          </div>
+
+          <button onclick="submit2FaLogin()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/20 transition">
+            Подтвердить и войти
           </button>
         </div>
+
       </div>
 
     </div>
@@ -432,7 +534,7 @@
     </div>
   </div>
 
-  <!-- ЦЕНТРАЛИЗОВАННОЕ ОКНО ДЕТАЛЕЙ ЗАЯВКИ С ОТВЕТОМ ТЕХ. СПЕЦИАЛИСТА -->
+  <!-- ЦЕНТРАЛИЗОВАННОЕ ОКНО ДЕТАЛЕЙ ЗАЯВКИ -->
   <div id="ticketDetailsModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[90vh]">
       <button onclick="closeTicketDetailsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2">✕</button>
@@ -446,7 +548,6 @@
       </div>
 
       <div class="flex-1 overflow-y-auto space-y-4 py-4 pr-1">
-        <!-- Вопрос студента -->
         <div class="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
           <div class="flex justify-between text-xs text-slate-400">
             <span id="detailStudentAuthor" class="font-semibold text-slate-600 dark:text-slate-300">Вопрос заявителя:</span>
@@ -461,7 +562,6 @@
           </div>
         </div>
 
-        <!-- Ответ тех. специалиста -->
         <div id="detailAdminReplyContainer" class="p-4 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800 space-y-2">
           <div class="flex items-center gap-2">
             <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">🛠</div>
@@ -514,6 +614,7 @@
     let attachedPhotoBase64 = null;
     let allStudentTickets = [];
     let currentCabinetTab = 'new';
+    let pending2FaLogin = null;
 
     window.addEventListener('DOMContentLoaded', () => {
       try { initTheme(); } catch (e) { console.error("Theme error:", e); }
@@ -554,6 +655,30 @@
       }
     }
 
+    /* ЛОГИКА FAQ */
+    function openFaqModal() {
+      document.getElementById('faqModal').classList.remove('hidden');
+      backToFaqChoice();
+    }
+    function closeFaqModal() {
+      document.getElementById('faqModal').classList.add('hidden');
+    }
+    function backToFaqChoice() {
+      document.getElementById('faqChoiceView').classList.remove('hidden');
+      document.getElementById('faqSiteView').classList.add('hidden');
+      document.getElementById('faqAboutView').classList.add('hidden');
+    }
+    function openFaqDetail(type) {
+      document.getElementById('faqChoiceView').classList.add('hidden');
+      if (type === 'about-site') {
+        document.getElementById('faqSiteView').classList.remove('hidden');
+        document.getElementById('faqSiteView').classList.add('flex');
+      } else {
+        document.getElementById('faqAboutView').classList.remove('hidden');
+        document.getElementById('faqAboutView').classList.add('flex');
+      }
+    }
+
     function checkStudentSession() {
       try {
         const saved = localStorage.getItem('upk_student');
@@ -590,6 +715,7 @@
       document.getElementById('roleSelectionView').classList.remove('hidden');
       document.getElementById('studentFormView').classList.add('hidden');
       document.getElementById('techFormView').classList.add('hidden');
+      backToPasswordStep();
     }
     function selectStudentRole() {
       document.getElementById('roleSelectionView').classList.add('hidden');
@@ -600,6 +726,13 @@
       document.getElementById('techFormView').classList.remove('hidden');
       document.getElementById('techLogin').value = '';
       document.getElementById('techPassword').value = '';
+      backToPasswordStep();
+    }
+
+    function backToPasswordStep() {
+      document.getElementById('techStepPassword').classList.remove('hidden');
+      document.getElementById('techStep2Fa').classList.add('hidden');
+      document.getElementById('tech2FaCodeInput').value = '';
     }
 
     function submitStudentAuth() {
@@ -612,12 +745,14 @@
       if (!/^\d{5}$/.test(card)) return alert("Студенческий билет должен состоять ровно из 5 цифр!");
 
       localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
       const fio = `${surname} ${name} ${patronymic}`;
       localStorage.setItem('upk_student', JSON.stringify({ fio, card }));
       closeAuthModal();
       checkStudentSession();
     }
 
+    /* АВТОРИЗАЦИЯ СПЕЦИАЛИСТА (С ПРОВЕРКОЙ 2FA) */
     async function submitTechAuth() {
       const login = document.getElementById('techLogin').value.trim();
       const password = document.getElementById('techPassword').value.trim();
@@ -630,15 +765,51 @@
           body: JSON.stringify({ login, password })
         });
         const data = await res.json();
+        
         if (res.ok) {
-          localStorage.removeItem('upk_student');
-          localStorage.setItem('admin_token', data.token);
-          window.location.href = '/admin';
+          if (data.status === 'require_2fa') {
+            // Требуется подтверждение кодом из Google Authenticator
+            pending2FaLogin = data.login;
+            document.getElementById('techStepPassword').classList.add('hidden');
+            document.getElementById('techStep2Fa').classList.remove('hidden');
+            document.getElementById('tech2FaCodeInput').focus();
+          } else {
+            // Успешный вход без 2FA
+            localStorage.removeItem('upk_student');
+            localStorage.setItem('admin_token', data.token);
+            localStorage.setItem('admin_user', JSON.stringify(data.user));
+            window.location.href = '/admin';
+          }
         } else {
           alert(data.detail || "Неверный логин или пароль");
         }
       } catch (e) {
         alert("Ошибка сервера при авторизации");
+      }
+    }
+
+    /* ПОДТВЕРЖДЕНИЕ 2FA-КОДА ПРИ ВХОДЕ */
+    async function submit2FaLogin() {
+      const code = document.getElementById('tech2FaCodeInput').value.trim();
+      if (!code || code.length !== 6) return alert("Введите 6-значный код из Google Authenticator");
+
+      try {
+        const res = await fetch('/api/auth/verify-2fa-login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ login: pending2FaLogin, code })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.removeItem('upk_student');
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_user', JSON.stringify(data.user));
+          window.location.href = '/admin';
+        } else {
+          alert(data.detail || "Неверный код подтверждения");
+        }
+      } catch (e) {
+        alert("Сбой при проверке кода 2FA");
       }
     }
 

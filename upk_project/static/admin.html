@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Панель УПК: Рабочее место специалиста</title>
+  <title>Панель УПК: Служебный портал</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -14,84 +14,336 @@
   <style>
     * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
     .rise-up { animation: riseAnimation 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    @keyframes riseAnimation { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes riseAnimation { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+
+    #profileDrawer {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
   </style>
 </head>
-<body class="bg-slate-100 dark:bg-[#0c1222] text-slate-800 dark:text-slate-100 min-h-screen p-4 sm:p-6 font-sans">
-  <div class="max-w-6xl mx-auto space-y-6">
+<body class="bg-slate-100 dark:bg-[#0c1222] text-slate-800 dark:text-slate-100 min-h-screen p-3 sm:p-6 font-sans">
+  <div class="max-w-6xl mx-auto space-y-5">
     
-    <!-- Шапка -->
-    <header class="flex justify-between items-center bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+    <!-- Шапка панели -->
+    <header class="flex flex-wrap justify-between items-center gap-3 bg-white dark:bg-[#131c31] p-4 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
       <div class="flex items-center gap-3">
-        <img src="/static/logo2.jpg" alt="Логотип ДГУ" class="w-10 h-10 rounded-full object-cover">
+        <img src="/static/logo2.jpg" alt="Логотип ДГУ" class="w-11 h-11 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700 bg-white p-0.5">
         <div>
-          <h1 class="text-lg font-bold text-indigo-700 dark:text-indigo-400">Панель диспетчера УПК</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Обработка обращений и диалог со заявителями</p>
+          <div class="flex items-center gap-2">
+            <h1 id="panelTitle" class="text-base sm:text-lg font-bold text-slate-800 dark:text-white leading-tight">Тех. Часть: Назначение специалистов</h1>
+            <span id="roleBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">Главный спец</span>
+          </div>
+          <p id="userInfoSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Управление учетными записями и правами доступа</p>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <button id="themeToggleBtn" onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white transition">
-          <svg id="moonIcon" class="w-5 h-5 block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-          <svg id="sunIcon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+        <button id="toggleViewBtn" onclick="toggleAdminView()" class="hidden text-xs font-bold px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 active:scale-95 transition">
+          📋 К жалобам
         </button>
-        <a href="/" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-2 rounded-lg font-medium border border-slate-200 dark:border-slate-700">Форма студента ↗</a>
-        <button onclick="logout()" class="text-xs bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 px-3 py-2 rounded-lg font-medium border border-red-200 dark:border-red-800">Выход</button>
+
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white transition">
+          <svg id="moonIcon" class="w-4 h-4 block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+          <svg id="sunIcon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+        </button>
+
+        <a href="/" target="_blank" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">Форма заявителя ↗</a>
+
+        <!-- КНОПКА: 3 ПОЛОСКИ -->
+        <button onclick="openDrawer()" title="Меню профиля" class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shadow-sm transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
       </div>
     </header>
 
-    <!-- Статистика -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-white dark:bg-[#131c31] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <span class="text-xs text-slate-500 uppercase font-semibold">Всего заявок</span>
-        <div id="statTotal" class="text-2xl font-bold text-slate-800 dark:text-white mt-1">0</div>
-      </div>
-      <div class="bg-white dark:bg-[#131c31] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <span class="text-xs text-blue-500 uppercase font-semibold">Новые</span>
-        <div id="statNew" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">0</div>
-      </div>
-      <div class="bg-white dark:bg-[#131c31] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <span class="text-xs text-amber-500 uppercase font-semibold">В работе</span>
-        <div id="statProgress" class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</div>
-      </div>
-      <div class="bg-white dark:bg-[#131c31] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <span class="text-xs text-emerald-500 uppercase font-semibold">Решены</span>
-        <div id="statResolved" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0</div>
-      </div>
-    </div>
+    <!-- ================= РАЗДЕЛ 1: ТЕХ. ЧАСТЬ ================= -->
+    <section id="techStaffSection" class="space-y-5 rise-up">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        <!-- Форма 1: Назначение нового специалиста -->
+        <div class="lg:col-span-7 bg-white dark:bg-[#131c31] p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Назначение нового специалиста</h2>
+            <p class="text-xs text-slate-500">После регистрации сотрудник сможет входить под своим логином и паролем</p>
+          </div>
 
-    <!-- Фильтры -->
-    <div class="bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap gap-3 items-center">
-      <input type="text" id="searchQuery" oninput="loadTickets()" placeholder="Поиск по ФИО, номеру или проблеме..." 
-        class="text-sm p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg outline-none flex-grow">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Фамилия</label>
+              <input type="text" id="specSurname" placeholder="Иванов" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Имя</label>
+              <input type="text" id="specName" placeholder="Иван" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Отчество</label>
+              <input type="text" id="specPatronymic" placeholder="Иванович" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Логин</label>
+              <input type="text" id="specLogin" placeholder="spec_ivanov" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Пароль</label>
+              <input type="text" id="specPassword" placeholder="Придумайте пароль" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+
+          <button onclick="submitNewSpecialist()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 active:scale-[0.99] transition">
+            Назначить на должность
+          </button>
+        </div>
+
+        <!-- Форма 2: Снятие с должности по ФИО -->
+        <div class="lg:col-span-5 bg-white dark:bg-[#131c31] p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4">
+          <div>
+            <h2 class="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Снятие с должности</h2>
+            <p class="text-xs text-slate-500">Введите ФИО сотрудника для полного отзыва прав доступа и удаления из системы</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">ФИО сотрудника для увольнения</label>
+            <input type="text" id="dismissFio" placeholder="Например: Иванов Иван Иванович" class="w-full text-xs p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/60 rounded-xl outline-none focus:ring-2 focus:ring-red-500">
+          </div>
+
+          <button onclick="dismissSpecialistByFio()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md shadow-red-600/20 active:scale-[0.99] transition">
+            Снять с должности и заблокировать
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Таблица сотрудников -->
+      <div class="bg-white dark:bg-[#131c31] rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Действующие технические специалисты</h3>
+          <button onclick="loadSpecialists()" class="text-xs text-indigo-500 hover:underline">Обновить список</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-400">
+              <tr>
+                <th class="p-3">ФИО специалиста</th>
+                <th class="p-3">Логин</th>
+                <th class="p-3">2FA Защита</th>
+                <th class="p-3 text-right">Действие</th>
+              </tr>
+            </thead>
+            <tbody id="specialistsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= РАЗДЕЛ 2: ЖАЛОБЫ ================= -->
+    <section id="ticketsSection" class="space-y-5 hidden">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <span class="text-[11px] text-slate-500 uppercase font-semibold">Всего заявок</span>
+          <div id="statTotal" class="text-xl font-bold text-slate-800 dark:text-white mt-1">0</div>
+        </div>
+        <div class="bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <span class="text-[11px] text-blue-500 uppercase font-semibold">Новые</span>
+          <div id="statNew" class="text-xl font-bold text-blue-600 dark:text-blue-400 mt-1">0</div>
+        </div>
+        <div class="bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <span class="text-[11px] text-amber-500 uppercase font-semibold">В работе</span>
+          <div id="statProgress" class="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</div>
+        </div>
+        <div class="bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <span class="text-[11px] text-emerald-500 uppercase font-semibold">Решены</span>
+          <div id="statResolved" class="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0</div>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-[#131c31] p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap gap-2.5 items-center">
+        <input type="text" id="searchQuery" oninput="loadTickets()" placeholder="Поиск по ФИО, номеру или проблеме..." 
+          class="text-xs p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none flex-grow">
+        
+        <select id="filterStatus" onchange="loadTickets()" class="text-xs p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
+          <option value="Все">Все статусы</option>
+          <option value="Новая">Новая</option>
+          <option value="В работе">В работе</option>
+          <option value="Решена">Решена</option>
+        </select>
+        <button onclick="loadTickets()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded-xl font-semibold hover:bg-indigo-700 transition">Обновить</button>
+      </div>
+
+      <div class="bg-white dark:bg-[#131c31] rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-400">
+            <tr>
+              <th class="p-3">Номер</th>
+              <th class="p-3">Студент</th>
+              <th class="p-3">Проблема</th>
+              <th class="p-3">Фото</th>
+              <th class="p-3">Ответ специалиста</th>
+              <th class="p-3">Статус</th>
+              <th class="p-3">Действие</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ================= ВЫДВИЖНАЯ ШТОРКА СПРАВА (ПРОФИЛЬ) ================= -->
+  <div id="drawerOverlay" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm justify-end">
+    <div id="profileDrawer" class="w-full max-w-sm bg-white dark:bg-[#131c31] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto transform translate-x-full border-l border-slate-200 dark:border-slate-800">
       
-      <select id="filterStatus" onchange="loadTickets()" class="text-sm p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg outline-none">
-        <option value="Все">Все статусы</option>
-        <option value="Новая">Новая</option>
-        <option value="В работе">В работе</option>
-        <option value="Решена">Решена</option>
-      </select>
-      <button onclick="loadTickets()" class="bg-indigo-600 text-white text-sm px-4 py-2.5 rounded-lg font-medium hover:bg-indigo-700">Обновить</button>
-    </div>
+      <div class="space-y-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <h2 id="drawerUserName" class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Специалист</h2>
+            <p id="drawerUserLogin" class="text-xs text-indigo-600 dark:text-indigo-400 font-mono mt-0.5">@login</p>
+          </div>
+          <button onclick="closeDrawer()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 text-lg">✕</button>
+        </div>
 
-    <!-- Таблица заявок -->
-    <div class="bg-white dark:bg-[#131c31] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500 dark:text-slate-400">
-          <tr>
-            <th class="p-3">Номер</th>
-            <th class="p-3">Студент</th>
-            <th class="p-3">Проблема</th>
-            <th class="p-3">Фото</th>
-            <th class="p-3">Ответ специалиста</th>
-            <th class="p-3">Статус</th>
-            <th class="p-3">Действие</th>
-          </tr>
-        </thead>
-        <tbody id="ticketsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-      </table>
-    </div>
+        <!-- КНОПКА: МОИ ОТВЕТЫ -->
+        <button onclick="openMyRepliesModal()" class="w-full flex items-center justify-between p-3.5 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl border border-indigo-200 dark:border-indigo-800 transition group text-left">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md">💬</div>
+            <div>
+              <div class="text-xs font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Мои ответы</div>
+              <div class="text-[11px] text-slate-500">Только решённые мной заявки</div>
+            </div>
+          </div>
+          <span class="text-xs text-indigo-500 font-bold">→</span>
+        </button>
 
+        <!-- ПАРАМЕТР: БЕЗОПАСНОСТЬ -->
+        <div class="space-y-2">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Параметры безопасности</span>
+          
+          <!-- Смена пароля -->
+          <button onclick="openChangePasswordModal()" class="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold transition">
+            <span class="flex items-center gap-2">🔑 Смена пароля</span>
+            <span class="text-slate-400 text-[11px]">Изменить</span>
+          </button>
+
+          <!-- Google Authenticator -->
+          <button onclick="open2FaManageModal()" class="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold transition">
+            <span class="flex items-center gap-2">🛡️ Google Authenticator</span>
+            <span id="drawer2FaBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">...</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+        <button onclick="logout()" class="w-full py-2.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 hover:bg-red-100 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800 transition">
+          Выйти из учётной записи
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- МОДАЛКА: МОИ ОТВЕТЫ -->
+  <div id="myRepliesModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-slate-800 dark:text-white">Мои обработанные обращения</h3>
+          <p class="text-xs text-slate-500">Заявки, закрытые вашей учётной записью</p>
+        </div>
+        <button onclick="closeMyRepliesModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 text-lg">✕</button>
+      </div>
+
+      <div id="myRepliesList" class="flex-1 overflow-y-auto space-y-3 py-3 pr-1"></div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА: СМЕНА ПАРОЛЯ -->
+  <div id="changePasswordModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
+        <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Смена пароля</h3>
+        <button onclick="closeChangePasswordModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Текущий пароль</label>
+          <input type="password" id="oldPasswordInput" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Новый пароль</label>
+          <input type="password" id="newPasswordInput" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Повторите новый пароль</label>
+          <input type="password" id="repeatPasswordInput" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+      </div>
+
+      <button onclick="submitChangePassword()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+        Сохранить новый пароль
+      </button>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА: ПОДКЛЮЧЕНИЕ / ОТКЛЮЧЕНИЕ GOOGLE AUTHENTICATOR -->
+  <div id="modal2FaManage" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🛡️</span>
+          <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Google Authenticator</h3>
+        </div>
+        <button onclick="close2FaManageModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">✕</button>
+      </div>
+
+      <!-- Вариант А: Подключение (если выключен) -->
+      <div id="view2FaSetup" class="space-y-4 hidden">
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          1. Откройте приложение <b>Google Authenticator</b> на смартфоне и отсканируйте этот QR-код:
+        </p>
+
+        <div class="flex justify-center p-3 bg-white rounded-2xl border border-slate-200 dark:border-slate-700 w-48 h-48 mx-auto shadow-sm">
+          <img id="qr2FaSetupImg" src="" alt="QR-код 2FA" class="w-full h-full object-contain">
+        </div>
+
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Либо введите ключ вручную:</span>
+          <div id="text2FaSecret" class="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl font-mono text-center text-xs tracking-wider select-all font-bold text-indigo-600 dark:text-indigo-400"></div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">2. Введите 6 цифр из приложения для активации:</label>
+          <input type="text" id="confirm2FaCodeInput" maxlength="6" placeholder="000000" 
+            class="w-full text-center text-lg tracking-[0.3em] font-mono p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-indigo-500/50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold">
+        </div>
+
+        <button onclick="submit2FaActivation()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+          Активировать двухфакторную защиту
+        </button>
+      </div>
+
+      <!-- Вариант Б: Уже включен (отключение) -->
+      <div id="view2FaEnabled" class="space-y-4 hidden text-center">
+        <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold">✓</div>
+        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Двухфакторная защита активна</h4>
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          При каждом входе в систему запрашивается разовый пароль из приложения Google Authenticator.
+        </p>
+
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 text-left space-y-2">
+          <label class="block text-xs font-semibold text-slate-500">Для отключения введите текущий пароль от аккаунта:</label>
+          <input type="password" id="disable2FaPasswordInput" placeholder="Ваш пароль" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-red-500">
+          <button onclick="submit2FaDisable()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+            Отключить защиту
+          </button>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- ДИАЛОГОВОЕ ОКНО ОТВЕТА СПЕЦИАЛИСТА НА ТИКЕТ -->
@@ -99,7 +351,6 @@
     <div class="w-full max-w-2xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[90vh]">
       <button onclick="closeReplyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 text-lg">✕</button>
       
-      <!-- Сверху: Данные студента -->
       <div class="pb-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-start pr-8">
         <div>
           <div class="flex items-center gap-2">
@@ -112,10 +363,7 @@
         <span id="modalTicketStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold">Новая</span>
       </div>
 
-      <!-- В центре: Диалог (Слева вопрос + фото, Справа ответ специалиста) -->
       <div class="flex-1 overflow-y-auto space-y-4 py-4 pr-1">
-        
-        <!-- Слева: Вопрос заявителя -->
         <div class="flex flex-col items-start max-w-[85%]">
           <span class="text-[10px] text-slate-400 mb-1 ml-1">Заявитель:</span>
           <div class="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-sm border border-slate-200 dark:border-slate-700 text-xs space-y-2">
@@ -129,21 +377,18 @@
           </div>
         </div>
 
-        <!-- Справа: Ответ тех. специалиста -->
         <div id="modalAdminReplyBubble" class="hidden flex-col items-end self-end max-w-[85%] ml-auto">
-          <span class="text-[10px] text-indigo-500 font-bold mb-1 mr-1">Тех. специалист (УПК):</span>
+          <span id="replyAuthorBadge" class="text-[10px] text-indigo-500 font-bold mb-1 mr-1">Тех. специалист (УПК):</span>
           <div class="p-4 bg-indigo-600 text-white rounded-2xl rounded-tr-sm shadow-md text-xs leading-relaxed whitespace-pre-wrap">
             <div id="modalAdminReplyText"></div>
           </div>
         </div>
-
       </div>
 
-      <!-- Снизу: Место, где тех. спец пишет ответ -->
       <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
         <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Ваш ответ заявителю:</label>
-          <textarea id="replyTextInput" rows="3" placeholder="Напишите ответ студенту (например: «Проектор проверен, заменён кабель HDMI. Всё работает»)..." 
+          <textarea id="replyTextInput" rows="3" placeholder="Напишите комментарий..." 
             class="w-full text-xs p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
         </div>
 
@@ -166,12 +411,14 @@
 
   <script>
     const TOKEN = "Bearer upk-admin-session-token-2026";
+    let currentUser = null;
+    let currentView = "techStaff";
     let activeTicket = null;
+    let tempSetupSecret = null;
 
     window.addEventListener('DOMContentLoaded', () => {
       initTheme();
-      loadStats();
-      loadTickets();
+      checkAuthAndInitRole();
     });
 
     function initTheme() {
@@ -199,65 +446,448 @@
       }
     }
 
-    async function loadStats() {
-      const res = await fetch('/api/admin/stats', { headers: { 'Authorization': TOKEN } });
-      if (!res.ok) return;
+    async function checkAuthAndInitRole() {
+      const savedUser = localStorage.getItem('admin_user');
+      const token = localStorage.getItem('admin_token');
+
+      if (!token && !savedUser) {
+        window.location.href = '/';
+        return;
+      }
+
+      if (!savedUser) {
+        currentUser = { name: "Главный специалист УПК", login: "admin", role: "superadmin" };
+      } else {
+        try {
+          currentUser = JSON.parse(savedUser);
+        } catch (e) {
+          currentUser = { name: "Главный специалист УПК", login: "admin", role: "superadmin" };
+        }
+      }
+
+      document.getElementById('drawerUserName').textContent = currentUser.name;
+      document.getElementById('drawerUserLogin').textContent = `@${currentUser.login}`;
+
+      // Загрузка статуса 2FA для плашки в шторке
+      update2FaBadge();
+
+      const isSuper = currentUser.role === 'superadmin' || currentUser.login === 'admin';
+      const roleBadge = document.getElementById('roleBadge');
+      const toggleBtn = document.getElementById('toggleViewBtn');
+
+      if (isSuper) {
+        roleBadge.textContent = "Главный специалист";
+        roleBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800";
+        toggleBtn.classList.remove('hidden');
+        setView("techStaff");
+      } else {
+        roleBadge.textContent = "Тех. специалист";
+        roleBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800";
+        toggleBtn.classList.add('hidden');
+        setView("tickets");
+      }
+    }
+
+    /* ЛОГИКА ВЫДВИЖНОЙ ШТОРКИ */
+    function openDrawer() {
+      const overlay = document.getElementById('drawerOverlay');
+      const drawer = document.getElementById('profileDrawer');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      setTimeout(() => {
+        drawer.classList.remove('translate-x-full');
+        drawer.classList.add('translate-x-0');
+      }, 10);
+      update2FaBadge();
+    }
+
+    function closeDrawer() {
+      const overlay = document.getElementById('drawerOverlay');
+      const drawer = document.getElementById('profileDrawer');
+      drawer.classList.remove('translate-x-0');
+      drawer.classList.add('translate-x-full');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+      }, 350);
+    }
+
+    /* СТАТУС И ПОДКЛЮЧЕНИЕ GOOGLE AUTHENTICATOR */
+    async function update2FaBadge() {
+      try {
+        const res = await fetch(`/api/auth/2fa/status?login=${encodeURIComponent(currentUser.login)}`, {
+          headers: { 'Authorization': TOKEN }
+        });
+        const data = await res.json();
+        const badge = document.getElementById('drawer2FaBadge');
+        if (data.is_2fa_enabled) {
+          badge.textContent = "Включено";
+          badge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400";
+        } else {
+          badge.textContent = "Выключено";
+          badge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400";
+        }
+      } catch (e) {}
+    }
+
+    async function open2FaManageModal() {
+      closeDrawer();
+      const modal = document.getElementById('modal2FaManage');
+      const viewSetup = document.getElementById('view2FaSetup');
+      const viewEnabled = document.getElementById('view2FaEnabled');
+      modal.classList.remove('hidden');
+
+      const res = await fetch(`/api/auth/2fa/status?login=${encodeURIComponent(currentUser.login)}`, {
+        headers: { 'Authorization': TOKEN }
+      });
       const data = await res.json();
-      document.getElementById('statTotal').textContent = data.total;
-      document.getElementById('statNew').textContent = data.new;
-      document.getElementById('statProgress').textContent = data.in_progress;
-      document.getElementById('statResolved').textContent = data.resolved;
+
+      if (data.is_2fa_enabled) {
+        viewSetup.classList.add('hidden');
+        viewEnabled.classList.remove('hidden');
+        document.getElementById('disable2FaPasswordInput').value = '';
+      } else {
+        viewEnabled.classList.add('hidden');
+        viewSetup.classList.remove('hidden');
+        document.getElementById('confirm2FaCodeInput').value = '';
+
+        // Запрашиваем новый ключ и QR код у сервера
+        const setupRes = await fetch('/api/auth/2fa/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
+          body: JSON.stringify({ login: currentUser.login })
+        });
+        const setupData = await setupRes.json();
+        tempSetupSecret = setupData.secret;
+        document.getElementById('qr2FaSetupImg').src = setupData.qr_image_data;
+        document.getElementById('text2FaSecret').textContent = setupData.secret;
+      }
+    }
+
+    function close2FaManageModal() {
+      document.getElementById('modal2FaManage').classList.add('hidden');
+    }
+
+    async function submit2FaActivation() {
+      const code = document.getElementById('confirm2FaCodeInput').value.trim();
+      if (!code || code.length !== 6) return alert("Введите 6-значный код из Google Authenticator");
+
+      const res = await fetch('/api/auth/2fa/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
+        body: JSON.stringify({ login: currentUser.login, secret: tempSetupSecret, code })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        close2FaManageModal();
+        update2FaBadge();
+        if (currentView === "techStaff") loadSpecialists();
+      } else {
+        alert(data.detail || "Неверный код активации");
+      }
+    }
+
+    async function submit2FaDisable() {
+      const password = document.getElementById('disable2FaPasswordInput').value.trim();
+      if (!password) return alert("Введите ваш текущий пароль");
+
+      const res = await fetch('/api/auth/2fa/disable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
+        body: JSON.stringify({ login: currentUser.login, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        close2FaManageModal();
+        update2FaBadge();
+        if (currentView === "techStaff") loadSpecialists();
+      } else {
+        alert(data.detail || "Ошибка при отключении 2FA");
+      }
+    }
+
+    /* МОИ ОТВЕТЫ */
+    async function openMyRepliesModal() {
+      closeDrawer();
+      const modal = document.getElementById('myRepliesModal');
+      const container = document.getElementById('myRepliesList');
+      modal.classList.remove('hidden');
+      container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">Загрузка ответов...</div>`;
+
+      try {
+        const res = await fetch(`/api/admin/my-tickets?assignee_name=${encodeURIComponent(currentUser.name)}`, {
+          headers: { 'Authorization': TOKEN }
+        });
+        const list = await res.json();
+        container.innerHTML = '';
+
+        if (!list || list.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-8 text-xs text-slate-400 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+              Вы ещё не ответили ни на одну заявку.
+            </div>`;
+          return;
+        }
+
+        list.forEach(t => {
+          const item = document.createElement('div');
+          item.className = "p-4 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs";
+          item.innerHTML = `
+            <div class="flex justify-between items-center">
+              <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${t.public_number}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400'}">${t.status}</span>
+            </div>
+            <div class="font-bold text-slate-800 dark:text-white">${t.title}</div>
+            <div class="text-slate-500">${t.description}</div>
+            <div class="mt-2 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-300 font-medium">
+              <span class="font-bold text-[11px] uppercase block mb-0.5">Ваш ответ:</span>
+              ${t.admin_reply}
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      } catch (e) {
+        container.innerHTML = `<div class="text-center py-6 text-xs text-red-500">Ошибка загрузки ответов</div>`;
+      }
+    }
+
+    function closeMyRepliesModal() {
+      document.getElementById('myRepliesModal').classList.add('hidden');
+    }
+
+    /* СМЕНА ПАРОЛЯ */
+    function openChangePasswordModal() {
+      closeDrawer();
+      document.getElementById('oldPasswordInput').value = '';
+      document.getElementById('newPasswordInput').value = '';
+      document.getElementById('repeatPasswordInput').value = '';
+      document.getElementById('changePasswordModal').classList.remove('hidden');
+    }
+    function closeChangePasswordModal() {
+      document.getElementById('changePasswordModal').classList.add('hidden');
+    }
+
+    async function submitChangePassword() {
+      const old_password = document.getElementById('oldPasswordInput').value.trim();
+      const new_password = document.getElementById('newPasswordInput').value.trim();
+      const repeat = document.getElementById('repeatPasswordInput').value.trim();
+
+      if (!old_password || !new_password) return alert("Заполните все поля");
+      if (new_password !== repeat) return alert("Новые пароли не совпадают");
+      if (new_password.length < 4) return alert("Пароль должен быть не короче 4 символов");
+
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
+        body: JSON.stringify({ login: currentUser.login, old_password, new_password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Пароль успешно изменён! Используйте его при следующем входе.");
+        closeChangePasswordModal();
+      } else {
+        alert(data.detail || "Ошибка при смене пароля");
+      }
+    }
+
+    function toggleAdminView() {
+      if (currentView === "techStaff") {
+        setView("tickets");
+      } else {
+        setView("techStaff");
+      }
+    }
+
+    function setView(view) {
+      currentView = view;
+      const techSection = document.getElementById('techStaffSection');
+      const ticketsSection = document.getElementById('ticketsSection');
+      const toggleBtn = document.getElementById('toggleViewBtn');
+      const panelTitle = document.getElementById('panelTitle');
+      const userInfoSubtitle = document.getElementById('userInfoSubtitle');
+
+      if (view === "techStaff") {
+        techSection.classList.remove('hidden');
+        ticketsSection.classList.add('hidden');
+        toggleBtn.textContent = "📋 К жалобам";
+        panelTitle.textContent = "Тех. Часть: Назначение специалистов";
+        userInfoSubtitle.textContent = `Управление штатом сотрудников (${currentUser.name})`;
+        loadSpecialists();
+      } else {
+        techSection.classList.add('hidden');
+        ticketsSection.classList.remove('hidden');
+        toggleBtn.textContent = "⚙️ Тех. Часть";
+        panelTitle.textContent = "Панель обращений УПК";
+        userInfoSubtitle.textContent = `Журнал заявок и устранение неполадок (${currentUser.name})`;
+        loadStats();
+        loadTickets();
+      }
+    }
+
+    async function loadSpecialists() {
+      try {
+        const res = await fetch('/api/admin/specialists', { headers: { 'Authorization': TOKEN } });
+        if (!res.ok) return;
+        const list = await res.json();
+        const tbody = document.getElementById('specialistsTableBody');
+        tbody.innerHTML = '';
+
+        if (!list || list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Назначенных тех. специалистов пока нет</td></tr>`;
+          return;
+        }
+
+        list.forEach(s => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition";
+          tr.innerHTML = `
+            <td class="p-3 font-bold text-slate-800 dark:text-slate-100">${s.name}</td>
+            <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 font-semibold">${s.login}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${s.is_2fa_enabled ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}">
+                ${s.is_2fa_enabled ? '🛡️ 2FA Активна' : 'Без 2FA'}
+              </span>
+            </td>
+            <td class="p-3 text-right">
+              <button onclick="dismissDirectly('${s.name}')" class="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline">
+                Снять с должности
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error("Ошибка загрузки специалистов:", e);
+      }
+    }
+
+    async function submitNewSpecialist() {
+      const surname = document.getElementById('specSurname').value.trim();
+      const name = document.getElementById('specName').value.trim();
+      const patronymic = document.getElementById('specPatronymic').value.trim();
+      const login = document.getElementById('specLogin').value.trim();
+      const password = document.getElementById('specPassword').value.trim();
+
+      if (!surname || !name) return alert("Заполните Фамилию и Имя.");
+      if (!login || !password) return alert("Заполните логин и пароль.");
+
+      const res = await fetch('/api/admin/specialists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
+        body: JSON.stringify({ surname, name, patronymic, login, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        document.getElementById('specSurname').value = '';
+        document.getElementById('specName').value = '';
+        document.getElementById('specPatronymic').value = '';
+        document.getElementById('specLogin').value = '';
+        document.getElementById('specPassword').value = '';
+        loadSpecialists();
+      } else {
+        alert(data.detail || "Ошибка при регистрации специалиста");
+      }
+    }
+
+    async function dismissSpecialistByFio() {
+      const fio = document.getElementById('dismissFio').value.trim();
+      if (!fio) return alert("Введите ФИО сотрудника для снятия с должности.");
+      dismissDirectly(fio);
+    }
+
+    async function dismissDirectly(fio) {
+      if (!confirm(`Вы действительно хотите снять с должности специалиста «${fio}»? Его доступ будет заблокирован.`)) return;
+
+      const res = await fetch('/api/admin/specialists/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
+        body: JSON.stringify({ fio })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        document.getElementById('dismissFio').value = '';
+        loadSpecialists();
+      } else {
+        alert(data.detail || "Ошибка при удалении");
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/admin/stats', { headers: { 'Authorization': TOKEN } });
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('statTotal').textContent = data.total;
+        document.getElementById('statNew').textContent = data.new;
+        document.getElementById('statProgress').textContent = data.in_progress;
+        document.getElementById('statResolved').textContent = data.resolved;
+      } catch (e) {
+        console.error("Ошибка загрузки статистики:", e);
+      }
     }
 
     async function loadTickets() {
-      const q = document.getElementById('searchQuery').value;
-      const st = document.getElementById('filterStatus').value;
-      const res = await fetch(`/api/admin/tickets?query=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}`, {
-        headers: { 'Authorization': TOKEN }
-      });
-      const tickets = await res.json();
-      const tbody = document.getElementById('ticketsTableBody');
-      tbody.innerHTML = '';
+      try {
+        const q = document.getElementById('searchQuery').value;
+        const st = document.getElementById('filterStatus').value;
+        const res = await fetch(`/api/admin/tickets?query=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}`, {
+          headers: { 'Authorization': TOKEN }
+        });
+        if (!res.ok) return;
+        const tickets = await res.json();
+        const tbody = document.getElementById('ticketsTableBody');
+        tbody.innerHTML = '';
 
-      tickets.forEach(t => {
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition";
-        tr.onclick = (e) => {
-          if (!e.target.closest('button')) openReplyModal(t);
-        };
+        tickets.forEach(t => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition";
+          tr.onclick = (e) => {
+            if (!e.target.closest('button')) openReplyModal(t);
+          };
 
-        tr.innerHTML = `
-          <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400">${t.public_number}</td>
-          <td class="p-3 text-xs">
-            <div class="font-semibold text-slate-800 dark:text-slate-100">${t.student_name || 'Анонимно'}</div>
-            <div class="text-slate-400 font-mono">${t.student_card ? '#' + t.student_card : ''}</div>
-          </td>
-          <td class="p-3 text-xs">
-            <div class="font-semibold text-slate-800 dark:text-slate-100">${t.title} ${t.is_dangerous ? '<span class="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold">ОПАСНОСТЬ</span>' : ''}</div>
-            <div class="text-slate-500 truncate max-w-xs">${t.description}</div>
-          </td>
-          <td class="p-3 text-xs">
-            ${t.photo_url ? `<img src="${t.photo_url}" class="w-9 h-9 object-cover rounded-lg border border-slate-300">` : '—'}
-          </td>
-          <td class="p-3 text-xs">
-            ${t.admin_reply ? `<span class="text-emerald-600 dark:text-emerald-400 truncate max-w-[150px] block font-medium">✓ ${t.admin_reply}</span>` : '<span class="text-slate-400">Нет ответа</span>'}
-          </td>
-          <td class="p-3">
-            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : (t.status === 'В работе' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400')}">
-              ${t.status}
-            </span>
-          </td>
-          <td class="p-3">
-            <button onclick='event.stopPropagation(); openReplyModal(${JSON.stringify(t)})' class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
-              Диалог / Ответить
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
+          tr.innerHTML = `
+            <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400">${t.public_number}</td>
+            <td class="p-3 text-xs">
+              <div class="font-semibold text-slate-800 dark:text-slate-100">${t.student_name || 'Анонимно'}</div>
+              <div class="text-slate-400 font-mono">${t.student_card ? '#' + t.student_card : ''}</div>
+            </td>
+            <td class="p-3 text-xs">
+              <div class="font-semibold text-slate-800 dark:text-slate-100">${t.title} ${t.is_dangerous ? '<span class="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold">ОПАСНОСТЬ</span>' : ''}</div>
+              <div class="text-slate-500 truncate max-w-xs">${t.description}</div>
+            </td>
+            <td class="p-3 text-xs">
+              ${t.photo_url ? `<img src="${t.photo_url}" class="w-8 h-8 object-cover rounded-lg border border-slate-300">` : '—'}
+            </td>
+            <td class="p-3 text-xs">
+              ${t.admin_reply ? `<span class="text-emerald-600 dark:text-emerald-400 truncate max-w-[140px] block font-medium">✓ ${t.admin_reply}</span>` : '<span class="text-slate-400">Нет ответа</span>'}
+            </td>
+            <td class="p-3">
+              <span class="text-xs font-bold px-2.5 py-1 rounded-full ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : (t.status === 'В работе' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400')}">
+                ${t.status}
+              </span>
+            </td>
+            <td class="p-3">
+              <button onclick='event.stopPropagation(); openReplyModal(${JSON.stringify(t)})' class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
+                Диалог / Ответить
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error("Ошибка загрузки тикетов:", e);
+      }
     }
 
-    // Открытие диалога ответа
     function openReplyModal(ticket) {
       activeTicket = ticket;
       document.getElementById('modalTicketNumber').textContent = ticket.public_number;
@@ -265,11 +895,9 @@
       document.getElementById('modalStudentName').textContent = ticket.student_name || 'Анонимный заявитель';
       document.getElementById('modalStudentCard').textContent = ticket.student_card ? `Студ. билет: #${ticket.student_card}` : '';
       document.getElementById('modalTicketStatusBadge').textContent = ticket.status;
-
       document.getElementById('modalTicketTitle').textContent = ticket.title;
       document.getElementById('modalTicketDescription').textContent = ticket.description;
 
-      // Фото
       const photoBox = document.getElementById('modalPhotoContainer');
       if (ticket.photo_url) {
         photoBox.classList.remove('hidden');
@@ -278,7 +906,6 @@
         photoBox.classList.add('hidden');
       }
 
-      // Ответ специалиста справа
       const replyBubble = document.getElementById('modalAdminReplyBubble');
       if (ticket.admin_reply) {
         replyBubble.classList.remove('hidden');
@@ -296,21 +923,16 @@
       document.getElementById('replyModal').classList.add('hidden');
     }
 
-    // Отправка ответа
     async function sendAdminReply() {
       if (!activeTicket) return;
       const reply = document.getElementById('replyTextInput').value.trim();
       const status = document.getElementById('replyStatusSelect').value;
-
-      if (!reply) return alert("Введите текст ответа для заявителя.");
+      if (!reply) return alert("Введите текст ответа.");
 
       const res = await fetch(`/api/admin/tickets/${activeTicket.id}/reply`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': TOKEN
-        },
-        body: JSON.stringify({ reply, status, assignee_name: "Инженер УПК" })
+        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
+        body: JSON.stringify({ reply, status, assignee_name: currentUser.name })
       });
 
       if (res.ok) {
@@ -324,6 +946,7 @@
 
     function logout() {
       localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
       window.location.href = '/';
     }
   </script>
