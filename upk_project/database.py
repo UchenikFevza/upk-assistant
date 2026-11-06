@@ -5,6 +5,12 @@ from datetime import datetime
 
 DB_FILE = "college.db"
 
+# Список кабинетов по этажам
+ROOMS_BY_FLOOR = {
+    1: ["103", "104", "105", "106", "108"],
+    2: ["213", "214", "215"]
+}
+
 def get_connection():
     conn = sqlite3.connect(DB_FILE, timeout=15)
     conn.row_factory = sqlite3.Row
@@ -40,19 +46,26 @@ def init_db():
     if "is_2fa_enabled" not in user_cols:
         cursor.execute("ALTER TABLE users ADD COLUMN is_2fa_enabled INTEGER DEFAULT 0")
 
-    # 2. Таблица локаций
+    # 2. Таблица локаций (кабинетов)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS locations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        building TEXT NOT NULL,
+        building TEXT NOT NULL DEFAULT 'Главный корпус',
         floor INTEGER NOT NULL,
-        room TEXT NOT NULL,
-        zone_name TEXT,
+        room TEXT UNIQUE NOT NULL,
         qr_key TEXT UNIQUE NOT NULL
     );
     """)
 
-    # 3. Таблица обращений
+    # Первичное наполнение кабинетов (1 и 2 этаж)
+    for floor, rooms in ROOMS_BY_FLOOR.items():
+        for room in rooms:
+            cursor.execute("""
+                INSERT OR IGNORE INTO locations (floor, room, qr_key)
+                VALUES (?, ?, ?)
+            """, (floor, room, f"room-{room}"))
+
+    # 3. Таблица обращений (с привязкой к кабинету и заделом под рейтинг)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS tickets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,6 +74,7 @@ def init_db():
         description TEXT NOT NULL,
         category TEXT NOT NULL,
         location_id INTEGER,
+        room_number TEXT,
         status TEXT NOT NULL DEFAULT 'Новая',
         assignee_name TEXT,
         tracking_token TEXT UNIQUE NOT NULL,
@@ -69,15 +83,23 @@ def init_db():
         student_card TEXT,
         photo_url TEXT,
         admin_reply TEXT,
+        rating INTEGER DEFAULT NULL,
+        rating_comment TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (location_id) REFERENCES locations (id)
     );
     """)
 
-    # Миграция tickets
+    # Безопасная автомиграция tickets
     cursor.execute("PRAGMA table_info(tickets)")
     ticket_cols = [col[1] for col in cursor.fetchall()]
+    if "room_number" not in ticket_cols:
+        cursor.execute("ALTER TABLE tickets ADD COLUMN room_number TEXT")
+    if "rating" not in ticket_cols:
+        cursor.execute("ALTER TABLE tickets ADD COLUMN rating INTEGER DEFAULT NULL")
+    if "rating_comment" not in ticket_cols:
+        cursor.execute("ALTER TABLE tickets ADD COLUMN rating_comment TEXT")
     if "student_name" not in ticket_cols:
         cursor.execute("ALTER TABLE tickets ADD COLUMN student_name TEXT")
     if "student_card" not in ticket_cols:
@@ -103,7 +125,7 @@ def init_db():
     );
     """)
 
-    # 5. Инициализация Главного Специалиста
+    # 5. Главный специалист (admin / admin123)
     cursor.execute("SELECT id FROM users WHERE login = 'admin'")
     admin_user = cursor.fetchone()
     if not admin_user:
@@ -121,6 +143,34 @@ def init_db():
     conn.commit()
     conn.close()
 
+# --- ФУНКЦИИ КАРТЫ ЭТАЖЕЙ И КАБИНЕТОВ ---
+
+def get_floor_map_data() -> dict:
+    conn = get_connection()
+    # Считаем количество активных заявок (не решённых) по каждому кабинету
+    active_counts = {}
+    rows = conn.execute("""
+        SELECT room_number, count(id) as count 
+        FROM tickets 
+        WHERE status != 'Решена' AND room_number IS NOT NULL
+        GROUP BY room_number
+    """).fetchall()
+    for r in rows:
+        active_counts[str(r["room_number"]).strip()] = r["count"]
+
+    conn.close()
+
+    result = {}
+    for floor, rooms in ROOMS_BY_FLOOR.items():
+        result[floor] = [
+            {
+                "room": room,
+                "active_tickets": active_counts.get(room, 0)
+            }
+            for room in rooms
+        ]
+    return result
+
 # --- УПРАВЛЕНИЕ СПЕЦИАЛИСТАМИ ---
 
 def create_specialist(name: str, login: str, password: str) -> tuple[bool, str]:
@@ -130,7 +180,7 @@ def create_specialist(name: str, login: str, password: str) -> tuple[bool, str]:
         cursor.execute("SELECT id FROM users WHERE login = ?", (login.strip(),))
         if cursor.fetchone():
             conn.close()
-            return False, "Специалист с таким логином уже существует в системе."
+            return False, "Специалист с таким логином уже существует."
 
         cursor.execute("""
             INSERT INTO users (name, login, role, password_hash)
@@ -138,7 +188,7 @@ def create_specialist(name: str, login: str, password: str) -> tuple[bool, str]:
         """, (name.strip(), login.strip(), hash_password(password.strip())))
         conn.commit()
         conn.close()
-        return True, f"Специалист «{name.strip()}» успешно назначен."
+        return True, f"Специалист «{name.strip()}» назначен."
     except Exception as e:
         conn.close()
         return False, str(e)
@@ -152,17 +202,17 @@ def delete_specialist_by_name(name: str) -> tuple[bool, str]:
     users = cursor.fetchall()
     if not users:
         conn.close()
-        return False, f"Специалист с ФИО «{clean_name}» не найден в базе данных."
+        return False, f"Специалист с ФИО «{clean_name}» не найден."
 
     if any(u["role"] == "superadmin" or u["login"] == "admin" for u in users):
         conn.close()
-        return False, "Запрещено удалять Главного Специалиста (суперадмина)."
+        return False, "Запрещено удалять Главного Специалиста."
 
     cursor.execute("DELETE FROM users WHERE name = ? COLLATE NOCASE AND role != 'superadmin'", (clean_name,))
-    deleted_count = cursor.rowcount
+    deleted = cursor.rowcount
     conn.commit()
     conn.close()
-    return True, f"Специалист «{clean_name}» успешно снят с должности (удалено записей: {deleted_count})."
+    return True, f"Специалист «{clean_name}» удален (записей: {deleted})."
 
 def get_all_specialists() -> list[dict]:
     conn = get_connection()
@@ -234,11 +284,12 @@ def get_user_2fa_status(login: str) -> dict:
         "has_secret": bool(user["totp_secret"])
     }
 
-# --- ТИКЕТЫ И ОТВЕТЫ ---
+# --- СОЗДАНИЕ И ОБРАБОТКА ТИКЕТОВ ---
 
 def create_ticket(title: str, description: str, category: str, location_id: int | None = None, 
-                  is_dangerous: bool = False, student_name: str | None = None, 
-                  student_card: str | None = None, photo_url: str | None = None) -> dict:
+                  room_number: str | None = None, is_dangerous: bool = False, 
+                  student_name: str | None = None, student_card: str | None = None, 
+                  photo_url: str | None = None) -> dict:
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -249,10 +300,10 @@ def create_ticket(title: str, description: str, category: str, location_id: int 
     tracking_token = str(uuid.uuid4())[:8]
 
     cursor.execute("""
-    INSERT INTO tickets (public_number, title, description, category, location_id, status, tracking_token, 
-                         is_dangerous, student_name, student_card, photo_url, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, 'Новая', ?, ?, ?, ?, ?, ?, ?)
-    """, (public_number, title, description, category, location_id, tracking_token, 
+    INSERT INTO tickets (public_number, title, description, category, location_id, room_number, 
+                         status, tracking_token, is_dangerous, student_name, student_card, photo_url, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'Новая', ?, ?, ?, ?, ?, ?, ?)
+    """, (public_number, title, description, category, location_id, room_number, tracking_token, 
           1 if is_dangerous else 0, student_name, student_card, photo_url, now, now))
     
     ticket_id = cursor.lastrowid
@@ -269,6 +320,7 @@ def create_ticket(title: str, description: str, category: str, location_id: int 
         "id": ticket_id,
         "public_number": public_number,
         "tracking_token": tracking_token,
+        "room_number": room_number,
         "status": "Новая"
     }
 
