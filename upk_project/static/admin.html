@@ -6,6 +6,9 @@
   <title>Панель УПК: Служебный портал</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    if (!localStorage.getItem('admin_token') || !localStorage.getItem('admin_user')) {
+      window.location.replace('/');
+    }
     tailwind.config = {
       darkMode: 'class',
       theme: { extend: {} }
@@ -19,9 +22,18 @@
     #profileDrawer {
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    
+    /* Пульсирующая индикаторная точка наличия тикета в кабинете */
+    .incident-dot {
+      animation: pulse-dot 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+    }
   </style>
 </head>
-<body class="bg-slate-100 dark:bg-[#0c1222] text-slate-800 dark:text-slate-100 min-h-screen p-3 sm:p-6 font-sans">
+<body id="adminBody" class="hidden bg-slate-100 dark:bg-[#0c1222] text-slate-800 dark:text-slate-100 min-h-screen p-3 sm:p-6 font-sans">
   <div class="max-w-6xl mx-auto space-y-5">
     
     <!-- Шапка панели -->
@@ -30,16 +42,22 @@
         <img src="/static/logo2.jpg" alt="Логотип ДГУ" class="w-11 h-11 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700 bg-white p-0.5">
         <div>
           <div class="flex items-center gap-2">
-            <h1 id="panelTitle" class="text-base sm:text-lg font-bold text-slate-800 dark:text-white leading-tight">Тех. Часть: Назначение специалистов</h1>
-            <span id="roleBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">Главный спец</span>
+            <h1 id="panelTitle" class="text-base sm:text-lg font-bold text-slate-800 dark:text-white leading-tight">Панель обращений УПК</h1>
+            <span id="roleBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">Специалист</span>
           </div>
-          <p id="userInfoSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Управление учетными записями и правами доступа</p>
+          <p id="userInfoSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Служебная панель управления</p>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <button id="toggleViewBtn" onclick="toggleAdminView()" class="hidden text-xs font-bold px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 active:scale-95 transition">
-          📋 К жалобам
+        <!-- Кнопка переключения на карту этажей -->
+        <button id="toggleFloorMapBtn" onclick="toggleFloorMapView()" class="text-xs font-bold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-slate-700 transition">
+          🗺️ Карта этажей
+        </button>
+
+        <!-- Кнопка Тех. Части для Главного спеца -->
+        <button id="toggleViewBtn" onclick="toggleAdminView()" class="hidden text-xs font-bold px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 active:scale-95 transition">
+          ⚙️ Тех. Часть
         </button>
 
         <button id="themeToggleBtn" onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white transition">
@@ -49,98 +67,47 @@
 
         <a href="/" target="_blank" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">Форма заявителя ↗</a>
 
-        <!-- КНОПКА: 3 ПОЛОСКИ -->
         <button onclick="openDrawer()" title="Меню профиля" class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shadow-sm transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
       </div>
     </header>
 
-    <!-- ================= РАЗДЕЛ 1: ТЕХ. ЧАСТЬ ================= -->
-    <section id="techStaffSection" class="space-y-5 rise-up">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        
-        <!-- Форма 1: Назначение нового специалиста -->
-        <div class="lg:col-span-7 bg-white dark:bg-[#131c31] p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+    <!-- ================= РАЗДЕЛ 1: КАРТА ПО ЭТАЖАМ И КАБИНЕТАМ ================= -->
+    <section id="floorMapSection" class="space-y-4 rise-up hidden">
+      <div class="bg-white dark:bg-[#131c31] p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <div class="flex flex-wrap justify-between items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h2 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Назначение нового специалиста</h2>
-            <p class="text-xs text-slate-500">После регистрации сотрудник сможет входить под своим логином и паролем</p>
+            <h2 class="text-base font-bold text-slate-800 dark:text-white">Интерактивная карта аудиторий</h2>
+            <p class="text-xs text-slate-500">Точка в правом верхнем углу сигнализирует об активном инциденте в аудитории</p>
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-500 mb-1">Фамилия</label>
-              <input type="text" id="specSurname" placeholder="Иванов" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+          
+          <div class="flex items-center gap-2">
+            <!-- Выбор этажа -->
+            <div class="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-bold">
+              <button onclick="selectFloor(1)" id="btnFloor1" class="px-4 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400 transition">
+                1 Этаж
+              </button>
+              <button onclick="selectFloor(2)" id="btnFloor2" class="px-4 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition">
+                2 Этаж
+              </button>
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-500 mb-1">Имя</label>
-              <input type="text" id="specName" placeholder="Иван" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-500 mb-1">Отчество</label>
-              <input type="text" id="specPatronymic" placeholder="Иванович" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
+            
+            <button onclick="toggleFloorMapView()" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 transition">
+              ← Назад к списку
+            </button>
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-500 mb-1">Логин</label>
-              <input type="text" id="specLogin" placeholder="spec_ivanov" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-500 mb-1">Пароль</label>
-              <input type="text" id="specPassword" placeholder="Придумайте пароль" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-          </div>
-
-          <button onclick="submitNewSpecialist()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 active:scale-[0.99] transition">
-            Назначить на должность
-          </button>
         </div>
 
-        <!-- Форма 2: Снятие с должности по ФИО -->
-        <div class="lg:col-span-5 bg-white dark:bg-[#131c31] p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4">
-          <div>
-            <h2 class="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Снятие с должности</h2>
-            <p class="text-xs text-slate-500">Введите ФИО сотрудника для полного отзыва прав доступа и удаления из системы</p>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-500 mb-1">ФИО сотрудника для увольнения</label>
-            <input type="text" id="dismissFio" placeholder="Например: Иванов Иван Иванович" class="w-full text-xs p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/60 rounded-xl outline-none focus:ring-2 focus:ring-red-500">
-          </div>
-
-          <button onclick="dismissSpecialistByFio()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md shadow-red-600/20 active:scale-[0.99] transition">
-            Снять с должности и заблокировать
-          </button>
-        </div>
-
-      </div>
-
-      <!-- Таблица сотрудников -->
-      <div class="bg-white dark:bg-[#131c31] rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-          <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Действующие технические специалисты</h3>
-          <button onclick="loadSpecialists()" class="text-xs text-indigo-500 hover:underline">Обновить список</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-400">
-              <tr>
-                <th class="p-3">ФИО специалиста</th>
-                <th class="p-3">Логин</th>
-                <th class="p-3">2FA Защита</th>
-                <th class="p-3 text-right">Действие</th>
-              </tr>
-            </thead>
-            <tbody id="specialistsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-          </table>
+        <!-- Сетка кабинетов -->
+        <div id="roomsGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 pt-5">
+          <!-- Генерируется скриптом -->
         </div>
       </div>
     </section>
 
-    <!-- ================= РАЗДЕЛ 2: ЖАЛОБЫ ================= -->
-    <section id="ticketsSection" class="space-y-5 hidden">
+    <!-- ================= РАЗДЕЛ 2: ЖАЛОБЫ (СТАНДАРТНЫЙ РЕЕСТР) ================= -->
+    <section id="ticketsSection" class="space-y-5">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="bg-white dark:bg-[#131c31] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
           <span class="text-[11px] text-slate-500 uppercase font-semibold">Всего заявок</span>
@@ -161,15 +128,28 @@
       </div>
 
       <div class="bg-white dark:bg-[#131c31] p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap gap-2.5 items-center">
-        <input type="text" id="searchQuery" oninput="loadTickets()" placeholder="Поиск по ФИО, номеру или проблеме..." 
+        <input type="text" id="searchQuery" oninput="loadTickets()" placeholder="Поиск по ФИО, номеру, аудитории..." 
           class="text-xs p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none flex-grow">
         
+        <select id="filterRoom" onchange="loadTickets()" class="text-xs p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none font-bold text-indigo-600 dark:text-indigo-400">
+          <option value="Все">Все кабинеты</option>
+          <option value="103">Каб. 103 (1 эт.)</option>
+          <option value="104">Каб. 104 (1 эт.)</option>
+          <option value="105">Каб. 105 (1 эт.)</option>
+          <option value="106">Каб. 106 (1 эт.)</option>
+          <option value="108">Каб. 108 (1 эт.)</option>
+          <option value="213">Каб. 213 (2 эт.)</option>
+          <option value="214">Каб. 214 (2 эт.)</option>
+          <option value="215">Каб. 215 (2 эт.)</option>
+        </select>
+
         <select id="filterStatus" onchange="loadTickets()" class="text-xs p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
           <option value="Все">Все статусы</option>
           <option value="Новая">Новая</option>
           <option value="В работе">В работе</option>
           <option value="Решена">Решена</option>
         </select>
+
         <button onclick="loadTickets()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded-xl font-semibold hover:bg-indigo-700 transition">Обновить</button>
       </div>
 
@@ -178,9 +158,9 @@
           <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-400">
             <tr>
               <th class="p-3">Номер</th>
-              <th class="p-3">Студент</th>
+              <th class="p-3">Аудитория</th>
+              <th class="p-3">Заявитель</th>
               <th class="p-3">Проблема</th>
-              <th class="p-3">Фото</th>
               <th class="p-3">Ответ специалиста</th>
               <th class="p-3">Статус</th>
               <th class="p-3">Действие</th>
@@ -191,12 +171,62 @@
       </div>
     </section>
 
+    <!-- ================= РАЗДЕЛ 3: ТЕХ. ЧАСТЬ (СУПЕРАДМИН) ================= -->
+    <section id="techStaffSection" class="space-y-5 rise-up hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        <div class="lg:col-span-7 bg-white dark:bg-[#131c31] p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+          <h2 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Назначение нового специалиста</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input type="text" id="specSurname" placeholder="Фамилия" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
+            <input type="text" id="specName" placeholder="Имя" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
+            <input type="text" id="specPatronymic" placeholder="Отчество" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input type="text" id="specLogin" placeholder="Логин" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
+            <input type="text" id="specPassword" placeholder="Пароль" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
+          </div>
+          <button onclick="submitNewSpecialist()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+            Назначить на должность
+          </button>
+        </div>
+
+        <div class="lg:col-span-5 bg-white dark:bg-[#131c31] p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4">
+          <h2 class="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Снятие с должности</h2>
+          <input type="text" id="dismissFio" placeholder="ФИО сотрудника" class="w-full text-xs p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/60 rounded-xl outline-none">
+          <button onclick="dismissSpecialistByFio()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+            Снять с должности
+          </button>
+        </div>
+
+      </div>
+
+      <div class="bg-white dark:bg-[#131c31] rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Действующие специалисты</h3>
+          <button onclick="loadSpecialists()" class="text-xs text-indigo-500 hover:underline">Обновить</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-400">
+              <tr>
+                <th class="p-3">ФИО</th>
+                <th class="p-3">Логин</th>
+                <th class="p-3">2FA</th>
+                <th class="p-3 text-right">Действие</th>
+              </tr>
+            </thead>
+            <tbody id="specialistsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 
-  <!-- ================= ВЫДВИЖНАЯ ШТОРКА СПРАВА (ПРОФИЛЬ) ================= -->
+  <!-- ВЫДВИЖНАЯ ШТОРКА СПРАВА -->
   <div id="drawerOverlay" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm justify-end">
     <div id="profileDrawer" class="w-full max-w-sm bg-white dark:bg-[#131c31] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto transform translate-x-full border-l border-slate-200 dark:border-slate-800">
-      
       <div class="space-y-6">
         <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
           <div>
@@ -206,42 +236,35 @@
           <button onclick="closeDrawer()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 text-lg">✕</button>
         </div>
 
-        <!-- КНОПКА: МОИ ОТВЕТЫ -->
         <button onclick="openMyRepliesModal()" class="w-full flex items-center justify-between p-3.5 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl border border-indigo-200 dark:border-indigo-800 transition group text-left">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md">💬</div>
             <div>
-              <div class="text-xs font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Мои ответы</div>
+              <div class="text-xs font-bold text-slate-800 dark:text-white">Мои ответы</div>
               <div class="text-[11px] text-slate-500">Только решённые мной заявки</div>
             </div>
           </div>
           <span class="text-xs text-indigo-500 font-bold">→</span>
         </button>
 
-        <!-- ПАРАМЕТР: БЕЗОПАСНОСТЬ -->
         <div class="space-y-2">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Параметры безопасности</span>
-          
-          <!-- Смена пароля -->
-          <button onclick="openChangePasswordModal()" class="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold transition">
-            <span class="flex items-center gap-2">🔑 Смена пароля</span>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Безопасность</span>
+          <button onclick="openChangePasswordModal()" class="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+            <span>🔑 Смена пароля</span>
             <span class="text-slate-400 text-[11px]">Изменить</span>
           </button>
-
-          <!-- Google Authenticator -->
-          <button onclick="open2FaManageModal()" class="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold transition">
-            <span class="flex items-center gap-2">🛡️ Google Authenticator</span>
-            <span id="drawer2FaBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">...</span>
+          <button onclick="open2FaManageModal()" class="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+            <span>🛡️ Google Authenticator</span>
+            <span id="drawer2FaBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-600">...</span>
           </button>
         </div>
       </div>
 
       <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
-        <button onclick="logout()" class="w-full py-2.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 hover:bg-red-100 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800 transition">
-          Выйти из учётной записи
+        <button onclick="logout()" class="w-full py-2.5 bg-red-50 text-red-600 dark:bg-red-950/40 hover:bg-red-100 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800 transition">
+          Выйти из системы
         </button>
       </div>
-
     </div>
   </div>
 
@@ -249,104 +272,60 @@
   <div id="myRepliesModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-2xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[85vh]">
       <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div>
-          <h3 class="text-base font-bold text-slate-800 dark:text-white">Мои обработанные обращения</h3>
-          <p class="text-xs text-slate-500">Заявки, закрытые вашей учётной записью</p>
-        </div>
+        <h3 class="text-base font-bold text-slate-800 dark:text-white">Мои обработанные обращения</h3>
         <button onclick="closeMyRepliesModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 text-lg">✕</button>
       </div>
-
       <div id="myRepliesList" class="flex-1 overflow-y-auto space-y-3 py-3 pr-1"></div>
     </div>
   </div>
 
   <!-- МОДАЛКА: СМЕНА ПАРОЛЯ -->
   <div id="changePasswordModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up space-y-4">
+    <div class="w-full max-w-md bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
         <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Смена пароля</h3>
         <button onclick="closeChangePasswordModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">✕</button>
       </div>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Текущий пароль</label>
-          <input type="password" id="oldPasswordInput" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Новый пароль</label>
-          <input type="password" id="newPasswordInput" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Повторите новый пароль</label>
-          <input type="password" id="repeatPasswordInput" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-      </div>
-
+      <input type="password" id="oldPasswordInput" placeholder="Текущий пароль" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
+      <input type="password" id="newPasswordInput" placeholder="Новый пароль" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
+      <input type="password" id="repeatPasswordInput" placeholder="Повторите пароль" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
       <button onclick="submitChangePassword()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition">
-        Сохранить новый пароль
+        Сохранить пароль
       </button>
     </div>
   </div>
 
-  <!-- МОДАЛКА: ПОДКЛЮЧЕНИЕ / ОТКЛЮЧЕНИЕ GOOGLE AUTHENTICATOR -->
+  <!-- МОДАЛКА: 2FA GOOGLE AUTHENTICATOR -->
   <div id="modal2FaManage" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up space-y-4">
       <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">🛡️</span>
-          <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Google Authenticator</h3>
-        </div>
+        <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Google Authenticator</h3>
         <button onclick="close2FaManageModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">✕</button>
       </div>
 
-      <!-- Вариант А: Подключение (если выключен) -->
       <div id="view2FaSetup" class="space-y-4 hidden">
-        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          1. Откройте приложение <b>Google Authenticator</b> на смартфоне и отсканируйте этот QR-код:
-        </p>
-
-        <div class="flex justify-center p-3 bg-white rounded-2xl border border-slate-200 dark:border-slate-700 w-48 h-48 mx-auto shadow-sm">
-          <img id="qr2FaSetupImg" src="" alt="QR-код 2FA" class="w-full h-full object-contain">
+        <p class="text-xs text-slate-500">Отсканируйте QR-код в приложении:</p>
+        <div class="flex justify-center p-3 bg-white rounded-2xl border w-44 h-44 mx-auto">
+          <img id="qr2FaSetupImg" src="" alt="QR" class="w-full h-full object-contain">
         </div>
-
-        <div>
-          <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Либо введите ключ вручную:</span>
-          <div id="text2FaSecret" class="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl font-mono text-center text-xs tracking-wider select-all font-bold text-indigo-600 dark:text-indigo-400"></div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">2. Введите 6 цифр из приложения для активации:</label>
-          <input type="text" id="confirm2FaCodeInput" maxlength="6" placeholder="000000" 
-            class="w-full text-center text-lg tracking-[0.3em] font-mono p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-indigo-500/50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold">
-        </div>
-
-        <button onclick="submit2FaActivation()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
-          Активировать двухфакторную защиту
+        <div id="text2FaSecret" class="p-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-mono text-center text-xs font-bold text-indigo-600"></div>
+        <input type="text" id="confirm2FaCodeInput" maxlength="6" placeholder="000000" class="w-full text-center text-lg font-mono p-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold">
+        <button onclick="submit2FaActivation()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition">
+          Активировать защиту
         </button>
       </div>
 
-      <!-- Вариант Б: Уже включен (отключение) -->
       <div id="view2FaEnabled" class="space-y-4 hidden text-center">
-        <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold">✓</div>
-        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Двухфакторная защита активна</h4>
-        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          При каждом входе в систему запрашивается разовый пароль из приложения Google Authenticator.
-        </p>
-
-        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 text-left space-y-2">
-          <label class="block text-xs font-semibold text-slate-500">Для отключения введите текущий пароль от аккаунта:</label>
-          <input type="password" id="disable2FaPasswordInput" placeholder="Ваш пароль" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-red-500">
-          <button onclick="submit2FaDisable()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition">
-            Отключить защиту
-          </button>
-        </div>
+        <div class="text-emerald-500 text-2xl font-bold">✓ Защита активна</div>
+        <input type="password" id="disable2FaPasswordInput" placeholder="Текущий пароль для отключения" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
+        <button onclick="submit2FaDisable()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition">
+          Отключить 2FA
+        </button>
       </div>
-
     </div>
   </div>
 
-  <!-- ДИАЛОГОВОЕ ОКНО ОТВЕТА СПЕЦИАЛИСТА НА ТИКЕТ -->
+  <!-- МОДАЛКА ОТВЕТА НА ТИКЕТ -->
   <div id="replyModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-2xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[90vh]">
       <button onclick="closeReplyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 text-lg">✕</button>
@@ -355,53 +334,37 @@
         <div>
           <div class="flex items-center gap-2">
             <span id="modalTicketNumber" class="text-base font-extrabold text-indigo-600 dark:text-indigo-400">ТИК-1001</span>
-            <span id="modalTicketCategory" class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">Оборудование</span>
+            <span id="modalTicketRoom" class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-bold"></span>
           </div>
-          <div id="modalStudentName" class="text-sm font-bold text-slate-800 dark:text-white mt-1">Иванов Иван</div>
-          <div id="modalStudentCard" class="text-xs text-slate-400 font-mono">Студ. билет: #12345</div>
+          <div id="modalStudentName" class="text-sm font-bold text-slate-800 dark:text-white mt-1"></div>
         </div>
-        <span id="modalTicketStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold">Новая</span>
+        <span id="modalTicketStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold"></span>
       </div>
 
       <div class="flex-1 overflow-y-auto space-y-4 py-4 pr-1">
-        <div class="flex flex-col items-start max-w-[85%]">
-          <span class="text-[10px] text-slate-400 mb-1 ml-1">Заявитель:</span>
-          <div class="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-sm border border-slate-200 dark:border-slate-700 text-xs space-y-2">
-            <div id="modalTicketTitle" class="font-bold text-slate-800 dark:text-white"></div>
-            <div id="modalTicketDescription" class="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
-            
-            <div id="modalPhotoContainer" class="hidden pt-1">
-              <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Прикреплённое фото:</span>
-              <img id="modalTicketPhoto" src="" class="max-h-48 rounded-xl border border-slate-300 dark:border-slate-600 object-cover cursor-pointer hover:opacity-90" onclick="window.open(this.src, '_blank')">
-            </div>
+        <div class="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl text-xs space-y-2">
+          <div id="modalTicketTitle" class="font-bold text-slate-800 dark:text-white"></div>
+          <div id="modalTicketDescription" class="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+          <div id="modalPhotoContainer" class="hidden pt-1">
+            <img id="modalTicketPhoto" src="" class="max-h-48 rounded-xl border object-cover cursor-pointer" onclick="window.open(this.src, '_blank')">
           </div>
         </div>
 
         <div id="modalAdminReplyBubble" class="hidden flex-col items-end self-end max-w-[85%] ml-auto">
-          <span id="replyAuthorBadge" class="text-[10px] text-indigo-500 font-bold mb-1 mr-1">Тех. специалист (УПК):</span>
-          <div class="p-4 bg-indigo-600 text-white rounded-2xl rounded-tr-sm shadow-md text-xs leading-relaxed whitespace-pre-wrap">
-            <div id="modalAdminReplyText"></div>
-          </div>
+          <span class="text-[10px] text-indigo-500 font-bold mb-1 mr-1">Тех. специалист:</span>
+          <div id="modalAdminReplyText" class="p-4 bg-indigo-600 text-white rounded-2xl text-xs leading-relaxed whitespace-pre-wrap"></div>
         </div>
       </div>
 
       <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
-        <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Ваш ответ заявителю:</label>
-          <textarea id="replyTextInput" rows="3" placeholder="Напишите комментарий..." 
-            class="w-full text-xs p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
-        </div>
-
+        <textarea id="replyTextInput" rows="3" placeholder="Ваш ответ заявителю..." class="w-full text-xs p-3 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none resize-none"></textarea>
         <div class="flex items-center gap-3">
-          <div class="flex-1">
-            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-0.5">Новый статус:</label>
-            <select id="replyStatusSelect" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none">
-              <option value="В работе">В работе (взять на рассмотрение)</option>
-              <option value="Решена" selected>Решена (проблема устранена)</option>
-            </select>
-          </div>
-          <button onclick="sendAdminReply()" class="mt-4 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
-            Отправить ответ
+          <select id="replyStatusSelect" class="flex-1 text-xs p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
+            <option value="В работе">В работе</option>
+            <option value="Решена" selected>Решена</option>
+          </select>
+          <button onclick="sendAdminReply()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+            Отправить
           </button>
         </div>
       </div>
@@ -410,10 +373,16 @@
   </div>
 
   <script>
-    const TOKEN = "Bearer upk-admin-session-token-2026";
+    function getAuthHeader() {
+      const token = localStorage.getItem('admin_token');
+      return token ? `Bearer ${token}` : '';
+    }
+
     let currentUser = null;
-    let currentView = "techStaff";
+    let currentView = "tickets";
     let activeTicket = null;
+    let activeFloor = 1;
+    let floorData = null;
     let tempSetupSecret = null;
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -432,16 +401,15 @@
     function applyTheme(theme) {
       const moon = document.getElementById('moonIcon');
       const sun = document.getElementById('sunIcon');
-      const btn = document.getElementById('themeToggleBtn');
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
-        moon.classList.add('hidden');
-        sun.classList.remove('hidden');
+        if (moon) moon.classList.add('hidden');
+        if (sun) sun.classList.remove('hidden');
         localStorage.setItem('theme', 'dark');
       } else {
         document.documentElement.classList.remove('dark');
-        sun.classList.add('hidden');
-        moon.classList.remove('hidden');
+        if (sun) sun.classList.add('hidden');
+        if (moon) moon.classList.remove('hidden');
         localStorage.setItem('theme', 'light');
       }
     }
@@ -450,26 +418,22 @@
       const savedUser = localStorage.getItem('admin_user');
       const token = localStorage.getItem('admin_token');
 
-      if (!token && !savedUser) {
-        window.location.href = '/';
-        return;
-      }
+      if (!token || !savedUser) { logout(); return; }
 
-      if (!savedUser) {
-        currentUser = { name: "Главный специалист УПК", login: "admin", role: "superadmin" };
-      } else {
-        try {
-          currentUser = JSON.parse(savedUser);
-        } catch (e) {
-          currentUser = { name: "Главный специалист УПК", login: "admin", role: "superadmin" };
-        }
-      }
+      try { currentUser = JSON.parse(savedUser); } catch (e) { logout(); return; }
 
+      const verifyRes = await fetch(`/api/auth/2fa/status?login=${encodeURIComponent(currentUser.login)}`, {
+        headers: { 'Authorization': getAuthHeader() }
+      });
+
+      if (verifyRes.status === 401) { logout(); return; }
+
+      document.getElementById('adminBody').classList.remove('hidden');
       document.getElementById('drawerUserName').textContent = currentUser.name;
       document.getElementById('drawerUserLogin').textContent = `@${currentUser.login}`;
 
-      // Загрузка статуса 2FA для плашки в шторке
-      update2FaBadge();
+      const statusData = await verifyRes.json();
+      render2FaBadge(statusData.is_2fa_enabled);
 
       const isSuper = currentUser.role === 'superadmin' || currentUser.login === 'admin';
       const roleBadge = document.getElementById('roleBadge');
@@ -479,424 +443,182 @@
         roleBadge.textContent = "Главный специалист";
         roleBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800";
         toggleBtn.classList.remove('hidden');
-        setView("techStaff");
       } else {
         roleBadge.textContent = "Тех. специалист";
         roleBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800";
         toggleBtn.classList.add('hidden');
-        setView("tickets");
       }
+
+      loadStats();
+      loadTickets();
     }
 
-    /* ЛОГИКА ВЫДВИЖНОЙ ШТОРКИ */
-    function openDrawer() {
-      const overlay = document.getElementById('drawerOverlay');
-      const drawer = document.getElementById('profileDrawer');
-      overlay.classList.remove('hidden');
-      overlay.classList.add('flex');
-      setTimeout(() => {
-        drawer.classList.remove('translate-x-full');
-        drawer.classList.add('translate-x-0');
-      }, 10);
-      update2FaBadge();
-    }
+    /* ИНТЕРАКТИВНАЯ КАРТА ПО ЭТАЖАМ */
+    function toggleFloorMapView() {
+      const mapSec = document.getElementById('floorMapSection');
+      const tickSec = document.getElementById('ticketsSection');
+      const techSec = document.getElementById('techStaffSection');
+      const btn = document.getElementById('toggleFloorMapBtn');
 
-    function closeDrawer() {
-      const overlay = document.getElementById('drawerOverlay');
-      const drawer = document.getElementById('profileDrawer');
-      drawer.classList.remove('translate-x-0');
-      drawer.classList.add('translate-x-full');
-      setTimeout(() => {
-        overlay.classList.add('hidden');
-        overlay.classList.remove('flex');
-      }, 350);
-    }
-
-    /* СТАТУС И ПОДКЛЮЧЕНИЕ GOOGLE AUTHENTICATOR */
-    async function update2FaBadge() {
-      try {
-        const res = await fetch(`/api/auth/2fa/status?login=${encodeURIComponent(currentUser.login)}`, {
-          headers: { 'Authorization': TOKEN }
-        });
-        const data = await res.json();
-        const badge = document.getElementById('drawer2FaBadge');
-        if (data.is_2fa_enabled) {
-          badge.textContent = "Включено";
-          badge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400";
-        } else {
-          badge.textContent = "Выключено";
-          badge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400";
-        }
-      } catch (e) {}
-    }
-
-    async function open2FaManageModal() {
-      closeDrawer();
-      const modal = document.getElementById('modal2FaManage');
-      const viewSetup = document.getElementById('view2FaSetup');
-      const viewEnabled = document.getElementById('view2FaEnabled');
-      modal.classList.remove('hidden');
-
-      const res = await fetch(`/api/auth/2fa/status?login=${encodeURIComponent(currentUser.login)}`, {
-        headers: { 'Authorization': TOKEN }
-      });
-      const data = await res.json();
-
-      if (data.is_2fa_enabled) {
-        viewSetup.classList.add('hidden');
-        viewEnabled.classList.remove('hidden');
-        document.getElementById('disable2FaPasswordInput').value = '';
+      if (mapSec.classList.contains('hidden')) {
+        mapSec.classList.remove('hidden');
+        tickSec.classList.add('hidden');
+        techSec.classList.add('hidden');
+        btn.textContent = "📋 К обычному списку";
+        loadFloorMap();
       } else {
-        viewEnabled.classList.add('hidden');
-        viewSetup.classList.remove('hidden');
-        document.getElementById('confirm2FaCodeInput').value = '';
-
-        // Запрашиваем новый ключ и QR код у сервера
-        const setupRes = await fetch('/api/auth/2fa/setup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
-          body: JSON.stringify({ login: currentUser.login })
-        });
-        const setupData = await setupRes.json();
-        tempSetupSecret = setupData.secret;
-        document.getElementById('qr2FaSetupImg').src = setupData.qr_image_data;
-        document.getElementById('text2FaSecret').textContent = setupData.secret;
-      }
-    }
-
-    function close2FaManageModal() {
-      document.getElementById('modal2FaManage').classList.add('hidden');
-    }
-
-    async function submit2FaActivation() {
-      const code = document.getElementById('confirm2FaCodeInput').value.trim();
-      if (!code || code.length !== 6) return alert("Введите 6-значный код из Google Authenticator");
-
-      const res = await fetch('/api/auth/2fa/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
-        body: JSON.stringify({ login: currentUser.login, secret: tempSetupSecret, code })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        close2FaManageModal();
-        update2FaBadge();
-        if (currentView === "techStaff") loadSpecialists();
-      } else {
-        alert(data.detail || "Неверный код активации");
-      }
-    }
-
-    async function submit2FaDisable() {
-      const password = document.getElementById('disable2FaPasswordInput').value.trim();
-      if (!password) return alert("Введите ваш текущий пароль");
-
-      const res = await fetch('/api/auth/2fa/disable', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
-        body: JSON.stringify({ login: currentUser.login, password })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        close2FaManageModal();
-        update2FaBadge();
-        if (currentView === "techStaff") loadSpecialists();
-      } else {
-        alert(data.detail || "Ошибка при отключении 2FA");
-      }
-    }
-
-    /* МОИ ОТВЕТЫ */
-    async function openMyRepliesModal() {
-      closeDrawer();
-      const modal = document.getElementById('myRepliesModal');
-      const container = document.getElementById('myRepliesList');
-      modal.classList.remove('hidden');
-      container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">Загрузка ответов...</div>`;
-
-      try {
-        const res = await fetch(`/api/admin/my-tickets?assignee_name=${encodeURIComponent(currentUser.name)}`, {
-          headers: { 'Authorization': TOKEN }
-        });
-        const list = await res.json();
-        container.innerHTML = '';
-
-        if (!list || list.length === 0) {
-          container.innerHTML = `
-            <div class="text-center py-8 text-xs text-slate-400 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-              Вы ещё не ответили ни на одну заявку.
-            </div>`;
-          return;
-        }
-
-        list.forEach(t => {
-          const item = document.createElement('div');
-          item.className = "p-4 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs";
-          item.innerHTML = `
-            <div class="flex justify-between items-center">
-              <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${t.public_number}</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400'}">${t.status}</span>
-            </div>
-            <div class="font-bold text-slate-800 dark:text-white">${t.title}</div>
-            <div class="text-slate-500">${t.description}</div>
-            <div class="mt-2 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-300 font-medium">
-              <span class="font-bold text-[11px] uppercase block mb-0.5">Ваш ответ:</span>
-              ${t.admin_reply}
-            </div>
-          `;
-          container.appendChild(item);
-        });
-      } catch (e) {
-        container.innerHTML = `<div class="text-center py-6 text-xs text-red-500">Ошибка загрузки ответов</div>`;
-      }
-    }
-
-    function closeMyRepliesModal() {
-      document.getElementById('myRepliesModal').classList.add('hidden');
-    }
-
-    /* СМЕНА ПАРОЛЯ */
-    function openChangePasswordModal() {
-      closeDrawer();
-      document.getElementById('oldPasswordInput').value = '';
-      document.getElementById('newPasswordInput').value = '';
-      document.getElementById('repeatPasswordInput').value = '';
-      document.getElementById('changePasswordModal').classList.remove('hidden');
-    }
-    function closeChangePasswordModal() {
-      document.getElementById('changePasswordModal').classList.add('hidden');
-    }
-
-    async function submitChangePassword() {
-      const old_password = document.getElementById('oldPasswordInput').value.trim();
-      const new_password = document.getElementById('newPasswordInput').value.trim();
-      const repeat = document.getElementById('repeatPasswordInput').value.trim();
-
-      if (!old_password || !new_password) return alert("Заполните все поля");
-      if (new_password !== repeat) return alert("Новые пароли не совпадают");
-      if (new_password.length < 4) return alert("Пароль должен быть не короче 4 символов");
-
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
-        body: JSON.stringify({ login: currentUser.login, old_password, new_password })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert("Пароль успешно изменён! Используйте его при следующем входе.");
-        closeChangePasswordModal();
-      } else {
-        alert(data.detail || "Ошибка при смене пароля");
-      }
-    }
-
-    function toggleAdminView() {
-      if (currentView === "techStaff") {
-        setView("tickets");
-      } else {
-        setView("techStaff");
-      }
-    }
-
-    function setView(view) {
-      currentView = view;
-      const techSection = document.getElementById('techStaffSection');
-      const ticketsSection = document.getElementById('ticketsSection');
-      const toggleBtn = document.getElementById('toggleViewBtn');
-      const panelTitle = document.getElementById('panelTitle');
-      const userInfoSubtitle = document.getElementById('userInfoSubtitle');
-
-      if (view === "techStaff") {
-        techSection.classList.remove('hidden');
-        ticketsSection.classList.add('hidden');
-        toggleBtn.textContent = "📋 К жалобам";
-        panelTitle.textContent = "Тех. Часть: Назначение специалистов";
-        userInfoSubtitle.textContent = `Управление штатом сотрудников (${currentUser.name})`;
-        loadSpecialists();
-      } else {
-        techSection.classList.add('hidden');
-        ticketsSection.classList.remove('hidden');
-        toggleBtn.textContent = "⚙️ Тех. Часть";
-        panelTitle.textContent = "Панель обращений УПК";
-        userInfoSubtitle.textContent = `Журнал заявок и устранение неполадок (${currentUser.name})`;
-        loadStats();
+        mapSec.classList.add('hidden');
+        tickSec.classList.remove('hidden');
+        btn.textContent = "🗺️ Карта этажей";
         loadTickets();
       }
     }
 
-    async function loadSpecialists() {
+    async function loadFloorMap() {
       try {
-        const res = await fetch('/api/admin/specialists', { headers: { 'Authorization': TOKEN } });
-        if (!res.ok) return;
-        const list = await res.json();
-        const tbody = document.getElementById('specialistsTableBody');
-        tbody.innerHTML = '';
-
-        if (!list || list.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Назначенных тех. специалистов пока нет</td></tr>`;
-          return;
-        }
-
-        list.forEach(s => {
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition";
-          tr.innerHTML = `
-            <td class="p-3 font-bold text-slate-800 dark:text-slate-100">${s.name}</td>
-            <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 font-semibold">${s.login}</td>
-            <td class="p-3">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${s.is_2fa_enabled ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}">
-                ${s.is_2fa_enabled ? '🛡️ 2FA Активна' : 'Без 2FA'}
-              </span>
-            </td>
-            <td class="p-3 text-right">
-              <button onclick="dismissDirectly('${s.name}')" class="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline">
-                Снять с должности
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
+        const res = await fetch('/api/admin/floor-map', { headers: { 'Authorization': getAuthHeader() } });
+        floorData = await res.json();
+        selectFloor(activeFloor);
       } catch (e) {
-        console.error("Ошибка загрузки специалистов:", e);
+        console.error("Ошибка загрузки карты этажей:", e);
       }
     }
 
-    async function submitNewSpecialist() {
-      const surname = document.getElementById('specSurname').value.trim();
-      const name = document.getElementById('specName').value.trim();
-      const patronymic = document.getElementById('specPatronymic').value.trim();
-      const login = document.getElementById('specLogin').value.trim();
-      const password = document.getElementById('specPassword').value.trim();
+    function selectFloor(floorNum) {
+      activeFloor = floorNum;
+      const b1 = document.getElementById('btnFloor1');
+      const b2 = document.getElementById('btnFloor2');
 
-      if (!surname || !name) return alert("Заполните Фамилию и Имя.");
-      if (!login || !password) return alert("Заполните логин и пароль.");
-
-      const res = await fetch('/api/admin/specialists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
-        body: JSON.stringify({ surname, name, patronymic, login, password })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        document.getElementById('specSurname').value = '';
-        document.getElementById('specName').value = '';
-        document.getElementById('specPatronymic').value = '';
-        document.getElementById('specLogin').value = '';
-        document.getElementById('specPassword').value = '';
-        loadSpecialists();
+      if (floorNum === 1) {
+        b1.className = "px-4 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400 font-bold transition";
+        b2.className = "px-4 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition";
       } else {
-        alert(data.detail || "Ошибка при регистрации специалиста");
+        b2.className = "px-4 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400 font-bold transition";
+        b1.className = "px-4 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition";
       }
-    }
 
-    async function dismissSpecialistByFio() {
-      const fio = document.getElementById('dismissFio').value.trim();
-      if (!fio) return alert("Введите ФИО сотрудника для снятия с должности.");
-      dismissDirectly(fio);
-    }
+      const container = document.getElementById('roomsGridContainer');
+      container.innerHTML = '';
 
-    async function dismissDirectly(fio) {
-      if (!confirm(`Вы действительно хотите снять с должности специалиста «${fio}»? Его доступ будет заблокирован.`)) return;
+      if (!floorData || !floorData[floorNum]) return;
 
-      const res = await fetch('/api/admin/specialists/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
-        body: JSON.stringify({ fio })
+      floorData[floorNum].forEach(item => {
+        const hasIncident = item.active_tickets > 0;
+        const card = document.createElement('div');
+        card.className = "relative group cursor-pointer p-4 bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-2xl border border-slate-200 dark:border-slate-700 text-center transition duration-200 shadow-sm";
+        card.onclick = () => filterTicketsByRoomCard(item.room);
+
+        // Индикаторная точка в правом верхнем углу
+        const dotHtml = hasIncident 
+          ? `<span class="absolute top-2.5 right-2.5 w-3 h-3 bg-red-500 rounded-full incident-dot shadow-md shadow-red-500/50" title="Есть активные заявки (${item.active_tickets})"></span>` 
+          : `<span class="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-emerald-400/80 rounded-full" title="Всё исправно"></span>`;
+
+        card.innerHTML = `
+          ${dotHtml}
+          <div class="text-xs text-slate-400 font-semibold mb-1 uppercase tracking-wider">Кабинет</div>
+          <div class="text-2xl font-black text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">${item.room}</div>
+          <div class="mt-2 text-[11px] font-bold ${hasIncident ? 'text-red-500' : 'text-slate-400'}">
+            ${hasIncident ? `⚠️ Заявок: ${item.active_tickets}` : 'Всё исправно'}
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center gap-1.5">
+            <a href="/api/qr/room/${item.room}" target="_blank" onclick="event.stopPropagation()" class="text-[10px] text-indigo-500 hover:underline flex items-center gap-1 font-semibold">
+              <span>QR для двери ↗</span>
+            </a>
+          </div>
+        `;
+        container.appendChild(card);
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        document.getElementById('dismissFio').value = '';
-        loadSpecialists();
-      } else {
-        alert(data.detail || "Ошибка при удалении");
-      }
     }
 
+    function filterTicketsByRoomCard(roomNum) {
+      toggleFloorMapView();
+      document.getElementById('filterRoom').value = roomNum;
+      loadTickets();
+    }
+
+    /* РЕЕСТР ТИКЕТОВ */
     async function loadStats() {
       try {
-        const res = await fetch('/api/admin/stats', { headers: { 'Authorization': TOKEN } });
+        const res = await fetch('/api/admin/stats', { headers: { 'Authorization': getAuthHeader() } });
         if (!res.ok) return;
         const data = await res.json();
         document.getElementById('statTotal').textContent = data.total;
         document.getElementById('statNew').textContent = data.new;
         document.getElementById('statProgress').textContent = data.in_progress;
         document.getElementById('statResolved').textContent = data.resolved;
-      } catch (e) {
-        console.error("Ошибка загрузки статистики:", e);
-      }
+      } catch (e) {}
     }
 
     async function loadTickets() {
       try {
         const q = document.getElementById('searchQuery').value;
         const st = document.getElementById('filterStatus').value;
-        const res = await fetch(`/api/admin/tickets?query=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}`, {
-          headers: { 'Authorization': TOKEN }
+        const rm = document.getElementById('filterRoom').value;
+        const res = await fetch(`/api/admin/tickets?query=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}&room=${encodeURIComponent(rm)}`, {
+          headers: { 'Authorization': getAuthHeader() }
         });
         if (!res.ok) return;
         const tickets = await res.json();
         const tbody = document.getElementById('ticketsTableBody');
         tbody.innerHTML = '';
 
+        if (tickets.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 text-xs">Заявок по заданному фильтру не найдено</td></tr>`;
+          return;
+        }
+
         tickets.forEach(t => {
           const tr = document.createElement('tr');
           tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition";
-          tr.onclick = (e) => {
-            if (!e.target.closest('button')) openReplyModal(t);
-          };
+          tr.onclick = (e) => { if (!e.target.closest('button')) openReplyModal(t); };
 
           tr.innerHTML = `
             <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400">${t.public_number}</td>
+            <td class="p-3">
+              ${t.room_number ? `<span class="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-extrabold text-[11px] border border-indigo-200 dark:border-indigo-800">Каб. ${t.room_number}</span>` : '<span class="text-slate-400">—</span>'}
+            </td>
             <td class="p-3 text-xs">
               <div class="font-semibold text-slate-800 dark:text-slate-100">${t.student_name || 'Анонимно'}</div>
               <div class="text-slate-400 font-mono">${t.student_card ? '#' + t.student_card : ''}</div>
             </td>
             <td class="p-3 text-xs">
-              <div class="font-semibold text-slate-800 dark:text-slate-100">${t.title} ${t.is_dangerous ? '<span class="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold">ОПАСНОСТЬ</span>' : ''}</div>
+              <div class="font-semibold text-slate-800 dark:text-slate-100">${t.title} ${t.is_dangerous ? '<span class="text-[10px] bg-red-600 text-white px-1 rounded font-bold">ОПАСНОСТЬ</span>' : ''}</div>
               <div class="text-slate-500 truncate max-w-xs">${t.description}</div>
-            </td>
-            <td class="p-3 text-xs">
-              ${t.photo_url ? `<img src="${t.photo_url}" class="w-8 h-8 object-cover rounded-lg border border-slate-300">` : '—'}
             </td>
             <td class="p-3 text-xs">
               ${t.admin_reply ? `<span class="text-emerald-600 dark:text-emerald-400 truncate max-w-[140px] block font-medium">✓ ${t.admin_reply}</span>` : '<span class="text-slate-400">Нет ответа</span>'}
             </td>
             <td class="p-3">
-              <span class="text-xs font-bold px-2.5 py-1 rounded-full ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : (t.status === 'В работе' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400')}">
+              <span class="text-xs font-bold px-2.5 py-1 rounded-full ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
                 ${t.status}
               </span>
             </td>
             <td class="p-3">
               <button onclick='event.stopPropagation(); openReplyModal(${JSON.stringify(t)})' class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
-                Диалог / Ответить
+                Диалог
               </button>
             </td>
           `;
           tbody.appendChild(tr);
         });
-      } catch (e) {
-        console.error("Ошибка загрузки тикетов:", e);
-      }
+      } catch (e) {}
     }
 
     function openReplyModal(ticket) {
       activeTicket = ticket;
       document.getElementById('modalTicketNumber').textContent = ticket.public_number;
-      document.getElementById('modalTicketCategory').textContent = ticket.category;
-      document.getElementById('modalStudentName').textContent = ticket.student_name || 'Анонимный заявитель';
-      document.getElementById('modalStudentCard').textContent = ticket.student_card ? `Студ. билет: #${ticket.student_card}` : '';
+      document.getElementById('modalStudentName').textContent = ticket.student_name || 'Заявитель';
       document.getElementById('modalTicketStatusBadge').textContent = ticket.status;
       document.getElementById('modalTicketTitle').textContent = ticket.title;
       document.getElementById('modalTicketDescription').textContent = ticket.description;
+
+      const roomBadge = document.getElementById('modalTicketRoom');
+      if (ticket.room_number) {
+        roomBadge.textContent = `Кабинет ${ticket.room_number}`;
+        roomBadge.classList.remove('hidden');
+      } else {
+        roomBadge.classList.add('hidden');
+      }
 
       const photoBox = document.getElementById('modalPhotoContainer');
       if (ticket.photo_url) {
@@ -927,11 +649,11 @@
       if (!activeTicket) return;
       const reply = document.getElementById('replyTextInput').value.trim();
       const status = document.getElementById('replyStatusSelect').value;
-      if (!reply) return alert("Введите текст ответа.");
+      if (!reply) return alert("Введите текст ответа");
 
       const res = await fetch(`/api/admin/tickets/${activeTicket.id}/reply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN },
+        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthHeader() },
         body: JSON.stringify({ reply, status, assignee_name: currentUser.name })
       });
 
@@ -939,9 +661,242 @@
         closeReplyModal();
         loadStats();
         loadTickets();
+        if (floorData) loadFloorMap();
       } else {
-        alert("Ошибка при сохранении ответа");
+        alert("Ошибка отправки");
       }
+    }
+
+    /* ШТОРКА, 2FA И ПАРОЛЬ */
+    function render2FaBadge(enabled) {
+      const badge = document.getElementById('drawer2FaBadge');
+      if (enabled) {
+        badge.textContent = "Включено";
+        badge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800";
+      } else {
+        badge.textContent = "Выключено";
+        badge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800";
+      }
+    }
+
+    function openDrawer() {
+      const overlay = document.getElementById('drawerOverlay');
+      const drawer = document.getElementById('profileDrawer');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      setTimeout(() => {
+        drawer.classList.remove('translate-x-full');
+        drawer.classList.add('translate-x-0');
+      }, 10);
+    }
+    function closeDrawer() {
+      const overlay = document.getElementById('drawerOverlay');
+      const drawer = document.getElementById('profileDrawer');
+      drawer.classList.remove('translate-x-0');
+      drawer.classList.add('translate-x-full');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+      }, 350);
+    }
+
+    async function openMyRepliesModal() {
+      closeDrawer();
+      const modal = document.getElementById('myRepliesModal');
+      const container = document.getElementById('myRepliesList');
+      modal.classList.remove('hidden');
+      container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">Загрузка...</div>`;
+
+      try {
+        const res = await fetch(`/api/admin/my-tickets?assignee_name=${encodeURIComponent(currentUser.name)}`, {
+          headers: { 'Authorization': getAuthHeader() }
+        });
+        const list = await res.json();
+        container.innerHTML = '';
+        if (list.length === 0) {
+          container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">Ответов пока нет</div>`;
+          return;
+        }
+        list.forEach(t => {
+          const item = document.createElement('div');
+          item.className = "p-3.5 bg-slate-50 dark:bg-slate-800 rounded-xl border text-xs space-y-1.5";
+          item.innerHTML = `
+            <div class="flex justify-between font-bold">
+              <span class="text-indigo-600">${t.public_number}</span>
+              <span class="text-emerald-600">${t.status}</span>
+            </div>
+            ${t.room_number ? `<div class="text-[11px] text-indigo-500 font-bold">Кабинет №${t.room_number}</div>` : ''}
+            <div class="font-semibold text-slate-800 dark:text-white">${t.title}</div>
+            <div class="text-slate-500">${t.admin_reply}</div>
+          `;
+          container.appendChild(item);
+        });
+      } catch (e) {}
+    }
+    function closeMyRepliesModal() { document.getElementById('myRepliesModal').classList.add('hidden'); }
+
+    function openChangePasswordModal() {
+      closeDrawer();
+      document.getElementById('changePasswordModal').classList.remove('hidden');
+    }
+    function closeChangePasswordModal() { document.getElementById('changePasswordModal').classList.add('hidden'); }
+
+    async function submitChangePassword() {
+      const old_password = document.getElementById('oldPasswordInput').value.trim();
+      const new_password = document.getElementById('newPasswordInput').value.trim();
+      const repeat = document.getElementById('repeatPasswordInput').value.trim();
+      if (!old_password || !new_password) return alert("Заполните поля");
+      if (new_password !== repeat) return alert("Пароли не совпадают");
+
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthHeader() },
+        body: JSON.stringify({ login: currentUser.login, old_password, new_password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Пароль успешно обновлен!");
+        closeChangePasswordModal();
+      } else {
+        alert(data.detail || "Ошибка");
+      }
+    }
+
+    async function open2FaManageModal() {
+      closeDrawer();
+      const modal = document.getElementById('modal2FaManage');
+      const viewSetup = document.getElementById('view2FaSetup');
+      const viewEnabled = document.getElementById('view2FaEnabled');
+      modal.classList.remove('hidden');
+
+      const res = await fetch(`/api/auth/2fa/status?login=${encodeURIComponent(currentUser.login)}`, {
+        headers: { 'Authorization': getAuthHeader() }
+      });
+      const data = await res.json();
+
+      if (data.is_2fa_enabled) {
+        viewSetup.classList.add('hidden');
+        viewEnabled.classList.remove('hidden');
+      } else {
+        viewEnabled.classList.add('hidden');
+        viewSetup.classList.remove('hidden');
+        const setupRes = await fetch('/api/auth/2fa/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': getAuthHeader() },
+          body: JSON.stringify({ login: currentUser.login })
+        });
+        const setupData = await setupRes.json();
+        tempSetupSecret = setupData.secret;
+        document.getElementById('qr2FaSetupImg').src = setupData.qr_image_data;
+        document.getElementById('text2FaSecret').textContent = setupData.secret;
+      }
+    }
+    function close2FaManageModal() { document.getElementById('modal2FaManage').classList.add('hidden'); }
+
+    async function submit2FaActivation() {
+      const code = document.getElementById('confirm2FaCodeInput').value.trim();
+      const res = await fetch('/api/auth/2fa/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthHeader() },
+        body: JSON.stringify({ login: currentUser.login, secret: tempSetupSecret, code })
+      });
+      if (res.ok) {
+        alert("2FA активирована!");
+        close2FaManageModal();
+        render2FaBadge(true);
+      } else {
+        alert("Неверный код");
+      }
+    }
+
+    async function submit2FaDisable() {
+      const password = document.getElementById('disable2FaPasswordInput').value.trim();
+      const res = await fetch('/api/auth/2fa/disable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthHeader() },
+        body: JSON.stringify({ login: currentUser.login, password })
+      });
+      if (res.ok) {
+        alert("2FA отключена");
+        close2FaManageModal();
+        render2FaBadge(false);
+      } else {
+        alert("Неверный пароль");
+      }
+    }
+
+    function toggleAdminView() {
+      const techSec = document.getElementById('techStaffSection');
+      const tickSec = document.getElementById('ticketsSection');
+      const mapSec = document.getElementById('floorMapSection');
+      const toggleBtn = document.getElementById('toggleViewBtn');
+
+      if (techSec.classList.contains('hidden')) {
+        techSec.classList.remove('hidden');
+        tickSec.classList.add('hidden');
+        mapSec.classList.add('hidden');
+        toggleBtn.textContent = "📋 К жалобам";
+        loadSpecialists();
+      } else {
+        techSec.classList.add('hidden');
+        tickSec.classList.remove('hidden');
+        toggleBtn.textContent = "⚙️ Тех. Часть";
+        loadTickets();
+      }
+    }
+
+    async function loadSpecialists() {
+      const res = await fetch('/api/admin/specialists', { headers: { 'Authorization': getAuthHeader() } });
+      if (!res.ok) return;
+      const list = await res.json();
+      const tbody = document.getElementById('specialistsTableBody');
+      tbody.innerHTML = '';
+      list.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40";
+        tr.innerHTML = `
+          <td class="p-3 font-bold">${s.name}</td>
+          <td class="p-3 font-mono text-indigo-600">${s.login}</td>
+          <td class="p-3"><span class="text-[10px] font-bold ${s.is_2fa_enabled ? 'text-emerald-600' : 'text-slate-400'}">${s.is_2fa_enabled ? 'Включена' : 'Выключена'}</span></td>
+          <td class="p-3 text-right"><button onclick="dismissSpecialistDirectly('${s.name}')" class="text-red-500 font-bold hover:underline">Удалить</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function submitNewSpecialist() {
+      const surname = document.getElementById('specSurname').value.trim();
+      const name = document.getElementById('specName').value.trim();
+      const patronymic = document.getElementById('specPatronymic').value.trim();
+      const login = document.getElementById('specLogin').value.trim();
+      const password = document.getElementById('specPassword').value.trim();
+
+      const res = await fetch('/api/admin/specialists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthHeader() },
+        body: JSON.stringify({ surname, name, patronymic, login, password })
+      });
+      if (res.ok) {
+        alert("Специалист добавлен");
+        loadSpecialists();
+      } else {
+        alert("Ошибка создания");
+      }
+    }
+
+    async function dismissSpecialistByFio() {
+      const fio = document.getElementById('dismissFio').value.trim();
+      dismissSpecialistDirectly(fio);
+    }
+
+    async function dismissSpecialistDirectly(fio) {
+      if (!confirm(`Удалить сотрудника «${fio}»?`)) return;
+      const res = await fetch('/api/admin/specialists/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthHeader() },
+        body: JSON.stringify({ fio })
+      });
+      if (res.ok) loadSpecialists();
     }
 
     function logout() {

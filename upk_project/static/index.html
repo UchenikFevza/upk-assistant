@@ -13,15 +13,12 @@
   </script>
   <style>
     * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
-
-    /* Вращение шестерёнок */
     @keyframes spin-cw { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     @keyframes spin-ccw { 0% { transform: rotate(0deg); } 100% { transform: rotate(-360deg); } }
     .gear-main { animation: spin-cw 4s linear infinite; transform-origin: 75px 85px; }
     .gear-sub { animation: spin-ccw 3s linear infinite; transform-origin: 40px 48px; }
     .gear-small { animation: spin-cw 2.2s linear infinite; transform-origin: 115px 115px; }
 
-    /* Подкручивание центральной гайки ключом */
     @keyframes wrench-turn {
       0% { transform: rotate(-35deg); }
       35% { transform: rotate(-8deg); }
@@ -34,13 +31,11 @@
       transform-origin: 75px 85px; 
     }
 
-    /* Падение инструментов вниз */
     .tools-falling { 
       transform: translateY(130vh) rotate(50deg) !important; 
       transition: transform 0.75s cubic-bezier(0.55, 0.055, 0.675, 0.19) !important; 
     }
 
-    /* Подъём размытия шторкой снизу вверх */
     #preloader {
       clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
       transition: clip-path 0.85s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.4s ease 0.4s;
@@ -51,7 +46,6 @@
       pointer-events: none !important; 
     }
 
-    /* Анимации карточек */
     .fold-up { transform: translateY(-40px) scale(0.96); opacity: 0; pointer-events: none; max-height: 0px !important; overflow: hidden; margin: 0 !important; padding: 0 !important; transition: all 0.5s ease; }
     .rise-up { animation: riseAnimation 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     @keyframes riseAnimation { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
@@ -80,21 +74,18 @@
           </filter>
         </defs>
 
-        <!-- Шестерня 2 (Слева вверху, синяя) -->
         <g class="gear-sub">
           <circle cx="40" cy="48" r="20" fill="#0284c7" stroke="#38bdf8" stroke-width="2.5"/>
           <path d="M40 24v5M40 67v5M16 48h5M59 48h5M23 31l4 4M53 61l4 4M23 65l4-4M53 35l4-4" stroke="#bae6fd" stroke-width="5" stroke-linecap="round"/>
           <circle cx="40" cy="48" r="7" fill="#082f49"/>
         </g>
 
-        <!-- Шестерня 3 (Справа внизу, зелёная) -->
         <g class="gear-small">
           <circle cx="115" cy="115" r="15" fill="#059669" stroke="#34d399" stroke-width="2"/>
           <path d="M115 97v4M115 129v4M97 115h4M129 115h4M102 102l3 3M125 125l3 3M102 128l3-3M125 105l3-3" stroke="#a7f3d0" stroke-width="4" stroke-linecap="round"/>
           <circle cx="115" cy="115" r="5" fill="#064e3b"/>
         </g>
 
-        <!-- Шестерня 1 (Центральная фиолетовая) -->
         <g class="gear-main">
           <circle cx="75" cy="85" r="28" fill="#4f46e5" stroke="#818cf8" stroke-width="3"/>
           <path d="M75 50v8M75 112v8M40 85h8M102 85h8M50 60l6 6M94 104l6 6M50 110l6-6M94 66l6-6" stroke="#c7d2fe" stroke-width="7" stroke-linecap="round"/>
@@ -103,23 +94,9 @@
           <circle cx="75" cy="85" r="3.2" fill="#0f172a"/>
         </g>
 
-        <!-- Рожковый гаечный ключ -->
         <g class="wrench-tool" filter="url(#toolShadow)">
           <g transform="translate(75, 85)">
-            <path d="M -12,-7
-                     C -15,-7 -16,-11 -13,-14
-                     C -6,-19 8,-18 18,-11
-                     L 72,-5
-                     C 76,-10 84,-10 89,-5
-                     C 94,0 94,8 89,13
-                     C 84,18 76,18 72,13
-                     L 18,11
-                     C 8,18 -6,19 -13,14
-                     C -16,11 -15,7 -12,7
-                     L 0,7
-                     C 5,7 7,4 7,0
-                     C 7,-4 5,-7 0,-7
-                     Z" 
+            <path d="M -12,-7 C -15,-7 -16,-11 -13,-14 C -6,-19 8,-18 18,-11 L 72,-5 C 76,-10 84,-10 89,-5 C 94,0 94,8 89,13 C 84,18 76,18 72,13 L 18,11 C 8,18 -6,19 -13,14 C -16,11 -15,7 -12,7 L 0,7 C 5,7 7,4 7,0 C 7,-4 5,-7 0,-7 Z" 
                   fill="url(#wrenchChrome)" stroke="#334155" stroke-width="1.4" stroke-linejoin="round"/>
             <circle cx="81" cy="4" r="5" fill="#0f172a" stroke="#475569" stroke-width="1.2"/>
             <rect x="24" y="2" width="44" height="4" rx="2" fill="#475569" opacity="0.45"/>
@@ -130,7 +107,6 @@
       </svg>
     </div>
 
-    <!-- Индикатор загрузки -->
     <div id="loaderProgressContainer" class="mt-8 w-56 flex flex-col items-center">
       <div class="w-full bg-slate-700/50 rounded-full h-1.5 overflow-hidden border border-white/10 backdrop-blur-sm">
         <div id="loaderProgressBar" class="h-full bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400 w-0 transition-all duration-75 ease-out"></div>
@@ -139,7 +115,6 @@
     </div>
   </div>
 
-  <!-- СКРИПТ ПРЕЛОАДЕРА -->
   <script>
     (function() {
       const progressBar = document.getElementById('loaderProgressBar');
@@ -149,39 +124,33 @@
 
       let progress = 0;
       const interval = setInterval(() => {
-        progress += 10;
+        progress += 12;
         if (progress > 100) progress = 100;
         if (progressBar) progressBar.style.width = progress + '%';
 
         if (progress === 100) {
           clearInterval(interval);
-
           setTimeout(() => {
             if (progressContainer) {
               progressContainer.style.transition = 'opacity 0.25s ease';
               progressContainer.style.opacity = '0';
             }
-
             setTimeout(() => {
               if (tools) tools.classList.add('tools-falling');
-
               setTimeout(() => {
                 if (preloader) {
                   preloader.classList.add('curtain-up');
                   setTimeout(() => { preloader.style.display = 'none'; }, 900);
                 }
               }, 750);
-
-            }, 250);
-          }, 150);
+            }, 200);
+          }, 100);
         }
       }, 35);
 
       setTimeout(() => {
-        if (preloader && preloader.style.display !== 'none') {
-          preloader.style.display = 'none';
-        }
-      }, 4000);
+        if (preloader && preloader.style.display !== 'none') preloader.style.display = 'none';
+      }, 3500);
     })();
   </script>
 
@@ -237,21 +206,38 @@
       </div>
     </div>
 
-    <!-- СЕКЦИЯ 2: ФОРМА ЗАЯВКИ С ПРИКРЕПЛЕНИЕМ ФОТО -->
+    <!-- СЕКЦИЯ 2: ФОРМА ЗАЯВКИ С АВТОПОДХВАТОМ КАБИНЕТА -->
     <div id="ticketFormSection" class="hidden p-5 flex-col gap-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      
+      <!-- Баннер сканирования QR-кода -->
+      <div id="qrScannedBanner" class="hidden p-3 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 rounded-2xl flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow">📍</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800 dark:text-white" id="qrScannedTitle">Аудитория определена по QR-коду</div>
+          <div class="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium" id="qrScannedSubtitle">Кабинет предзаполнен автоматически</div>
+        </div>
+      </div>
+
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">Заявка тех. специалисту</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400">Обращение поступит дежурному инженеру УПК</p>
         </div>
-        <button onclick="backToChat()" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">← Назад в чат</button>
+        <button id="backToChatBtn" onclick="backToChat()" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">← Назад в чат</button>
       </div>
 
       <div class="space-y-3">
+        <!-- Поле выбора/отображения кабинета -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase">Аудитория / Кабинет</label>
+          <input type="text" id="formRoom" placeholder="Например: 103, 214..." class="w-full text-sm p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600 dark:text-indigo-400">
+        </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase">Тема обращения</label>
           <input type="text" id="formTitle" class="w-full text-sm p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase">Категория</label>
           <select id="formCategory" class="w-full text-sm p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
@@ -263,6 +249,7 @@
             <option value="Прочее">Прочее</option>
           </select>
         </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase">Описание проблемы</label>
           <textarea id="formDescription" rows="2" class="w-full text-sm p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
@@ -299,6 +286,7 @@
       <div class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1 my-2">
         <span class="text-xs text-slate-400">Номер обращения:</span>
         <span id="ticketNumberBadge" class="text-lg font-extrabold text-indigo-600 dark:text-indigo-400">ТИК-1001</span>
+        <span id="ticketRoomBadge" class="text-xs font-semibold text-slate-500"></span>
       </div>
 
       <div class="flex w-full gap-2 mt-2">
@@ -313,13 +301,13 @@
 
   </main>
 
-  <!-- ================= КНОПКА FAQ (СТРОГО СЛЕВА ВНИЗУ) ================= -->
+  <!-- ================= КНОПКА FAQ (СЛЕВА ВНИЗУ) ================= -->
   <button onclick="openFaqModal()" class="fixed bottom-5 left-5 z-30 flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-white/90 dark:bg-[#131c31]/90 backdrop-blur-md shadow-xl border border-slate-200/80 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:scale-105 active:scale-95 transition-all group">
     <span class="w-6 h-6 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs group-hover:bg-indigo-600 group-hover:text-white transition">?</span>
     <span>FAQ и Справка</span>
   </button>
 
-  <!-- ================= МОДАЛКА FAQ ================= -->
+  <!-- МОДАЛКА FAQ -->
   <div id="faqModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up flex flex-col max-h-[90vh]">
       <button onclick="closeFaqModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 text-lg">✕</button>
@@ -362,15 +350,9 @@
             <h4 class="font-bold text-indigo-700 dark:text-indigo-400 mb-1">✍️ Как написать тех. специалисту</h4>
             <p class="mb-1.5">Связаться с дежурным сотрудником технической службы можно двумя способами:</p>
             <ul class="list-disc list-inside space-y-1 text-slate-700 dark:text-slate-300">
-              <li>Напишите в поле ввода фразу <b>«позови поддержку»</b>, <b>«нужен человек»</b> или <b>«оператор»</b> — чат автоматически свернётся и откроет карточку официальной заявки.</li>
-              <li>Если в ответ на вопрос нейросеть выявила неисправность, нажмите кнопку <b>«Передать тех. специалисту →»</b> под сообщением ИИ.</li>
-              <li>В открывшейся форме можно подробно описать неполадку, указать аудиторию и прикрепить фото поломки.</li>
+              <li>Отсканируйте настенный QR-код в аудитории — форма откроется сразу с готовым номером кабинета.</li>
+              <li>Либо напишите в чат фразу <b>«позови поддержку»</b> или нажмите <b>«Передать тех. специалисту →»</b> под сообщением нейросети.</li>
             </ul>
-          </div>
-
-          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <h4 class="font-bold text-slate-800 dark:text-white mb-1">📱 Удобный трекинг обращений</h4>
-            <p>Каждая оформленная заявка получает персональный номер (например, ТИК-1001). Студенты и преподаватели могут в один клик отслеживать этап выполнения через кнопку «Отследить» в шапке сайта.</p>
           </div>
         </div>
       </div>
@@ -404,13 +386,11 @@
     <div class="w-full max-w-xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up">
       <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2">✕</button>
 
-      <!-- Выбор роли -->
       <div id="roleSelectionView">
         <h2 class="text-lg font-bold text-center text-slate-800 dark:text-white mb-2">Выберите режим входа</h2>
         <p class="text-xs text-center text-slate-500 mb-6">Авторизуйтесь для сохранения и контроля ваших обращений</p>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Студент -->
           <div onclick="selectStudentRole()" class="cursor-pointer group flex flex-col items-center justify-between p-5 bg-slate-50 dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-2xl transition duration-300 shadow-sm">
             <div class="w-28 h-28 flex items-center justify-center mb-3">
               <img src="/static/images.jpg" alt="Студент" onerror="this.src='/static/images.png'" class="max-w-full max-h-full object-contain group-hover:scale-105 transition">
@@ -420,7 +400,6 @@
             </span>
           </div>
 
-          <!-- Тех. специалист -->
           <div onclick="selectTechRole()" class="cursor-pointer group flex flex-col items-center justify-between p-5 bg-slate-50 dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-2xl transition duration-300 shadow-sm">
             <div class="w-28 h-28 flex items-center justify-center mb-3 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
               <img src="/static/8733.png" alt="Тех.специалист" class="max-w-full max-h-full object-contain group-hover:scale-105 transition">
@@ -461,10 +440,8 @@
         </div>
       </div>
 
-      <!-- Форма тех. специалиста (С ПОДДЕРЖКОЙ GOOGLE AUTHENTICATOR) -->
+      <!-- Форма тех. специалиста -->
       <div id="techFormView" class="hidden">
-        
-        <!-- Шаг 1: Логин и пароль -->
         <div id="techStepPassword">
           <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
             <h3 class="text-base font-bold text-slate-800 dark:text-white">Вход для тех. персонала</h3>
@@ -477,12 +454,7 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Пароль</label>
-              <div class="relative">
-                <input type="password" id="techPassword" value="" placeholder="Введите пароль" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 pr-10">
-                <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                  <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                </button>
-              </div>
+              <input type="password" id="techPassword" value="" placeholder="Введите пароль" class="w-full text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
             <button onclick="submitTechAuth()" class="w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg transition">
               Авторизоваться в панели
@@ -490,7 +462,6 @@
           </div>
         </div>
 
-        <!-- Шаг 2: Ввод 6-значного кода 2FA (появляется если включена защита) -->
         <div id="techStep2Fa" class="hidden space-y-4 rise-up">
           <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
             <div class="flex items-center gap-2">
@@ -501,11 +472,10 @@
           </div>
           
           <p class="text-xs text-slate-500 dark:text-slate-400">
-            Откройте приложение <b>Google Authenticator</b> на телефоне и введите текущий 6-значный код подтверждения:
+            Введите 6-значный код из приложения Google Authenticator:
           </p>
 
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Код из приложения (6 цифр)</label>
             <input type="text" id="tech2FaCodeInput" maxlength="6" placeholder="000000" 
               class="w-full text-center text-xl tracking-[0.4em] font-mono p-3 bg-slate-50 dark:bg-slate-800 border-2 border-indigo-500/50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600 dark:text-indigo-400">
           </div>
@@ -514,21 +484,20 @@
             Подтвердить и войти
           </button>
         </div>
-
       </div>
 
     </div>
   </div>
 
-  <!-- МОДАЛКА БЫСТРОГО ОТСЛЕЖИВАНИЯ ПО НОМЕРУ / ЦИФРАМ -->
+  <!-- МОДАЛКА БЫСТРОГО ОТСЛЕЖИВАНИЯ -->
   <div id="quickTrackModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative rise-up">
       <button onclick="closeQuickTrackModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2">✕</button>
       <h3 class="text-base font-bold text-slate-800 dark:text-white mb-1">Отслеживание обращения</h3>
-      <p class="text-xs text-slate-500 mb-4">Введите номер заявки (например, ТИК-1001 или просто 1001)</p>
+      <p class="text-xs text-slate-500 mb-4">Введите номер заявки (например, ТИК-1001 или 1001)</p>
       
       <div class="flex gap-2">
-        <input type="text" id="trackSearchInput" placeholder="Номер или 4 цифры..." class="flex-1 text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+        <input type="text" id="trackSearchInput" placeholder="Номер..." class="flex-1 text-sm p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
         <button onclick="performQuickTrack()" class="px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-md transition">Найти</button>
       </div>
     </div>
@@ -550,14 +519,14 @@
       <div class="flex-1 overflow-y-auto space-y-4 py-4 pr-1">
         <div class="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
           <div class="flex justify-between text-xs text-slate-400">
-            <span id="detailStudentAuthor" class="font-semibold text-slate-600 dark:text-slate-300">Вопрос заявителя:</span>
+            <span id="detailStudentAuthor" class="font-semibold text-slate-600 dark:text-slate-300">Заявитель:</span>
             <span id="detailTicketDate"></span>
           </div>
+          <div id="detailRoomBadge" class="inline-block px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-bold"></div>
           <div id="detailTicketTitle" class="font-bold text-sm text-slate-800 dark:text-white"></div>
           <div id="detailTicketDescription" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
           
           <div id="detailPhotoContainer" class="hidden pt-2">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Прикреплённое фото:</span>
             <img id="detailTicketPhoto" src="" class="max-h-48 rounded-xl border border-slate-300 dark:border-slate-600 object-cover cursor-pointer hover:opacity-95" onclick="window.open(this.src, '_blank')">
           </div>
         </div>
@@ -578,7 +547,7 @@
     </div>
   </div>
 
-  <!-- КАБИНЕТ СТУДЕНТА (3 ПОЛОСКИ) -->
+  <!-- КАБИНЕТ СТУДЕНТА -->
   <div id="studentCabinetModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-2xl bg-white dark:bg-[#131c31] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative flex flex-col max-h-[85vh] rise-up">
       <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -608,18 +577,42 @@
     </div>
   </div>
 
-  <!-- ОСНОВНОЙ СКРИПТ -->
   <script>
     let lastAiData = null;
     let attachedPhotoBase64 = null;
     let allStudentTickets = [];
     let currentCabinetTab = 'new';
     let pending2FaLogin = null;
+    let scannedRoom = null;
 
     window.addEventListener('DOMContentLoaded', () => {
-      try { initTheme(); } catch (e) { console.error("Theme error:", e); }
-      try { checkStudentSession(); } catch (e) { console.error("Session error:", e); }
+      try { initTheme(); } catch (e) {}
+      try { checkStudentSession(); } catch (e) {}
+      try { checkUrlRoomParam(); } catch (e) {}
     });
+
+    // Автоподхват кабинета из параметров URL (?room=103 / ?room=214)
+    function checkUrlRoomParam() {
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get('room');
+      if (room) {
+        scannedRoom = room.trim();
+        document.getElementById('formRoom').value = scannedRoom;
+        document.getElementById('formRoom').readOnly = true;
+
+        const banner = document.getElementById('qrScannedBanner');
+        banner.classList.remove('hidden');
+        document.getElementById('qrScannedTitle').textContent = `Аудитория определена: Кабинет №${scannedRoom}`;
+        const floor = scannedRoom.startsWith('1') ? '1 этаж' : (scannedRoom.startsWith('2') ? '2 этаж' : '');
+        document.getElementById('qrScannedSubtitle').textContent = `${floor} • Заполните тему и опишите неполадку`;
+
+        // Сразу открываем карточку оформления тикета
+        document.getElementById('chatSection').classList.add('hidden');
+        document.getElementById('ticketFormSection').classList.remove('hidden');
+        document.getElementById('ticketFormSection').classList.add('flex');
+        document.getElementById('backToChatBtn').textContent = "← Открыть диалог с ИИ";
+      }
+    }
 
     function initTheme() {
       const saved = localStorage.getItem('theme') || 'light';
@@ -648,14 +641,6 @@
       }
     }
 
-    function togglePasswordVisibility() {
-      const pwd = document.getElementById('techPassword');
-      if (pwd) {
-        pwd.type = (pwd.type === 'password') ? 'text' : 'password';
-      }
-    }
-
-    /* ЛОГИКА FAQ */
     function openFaqModal() {
       document.getElementById('faqModal').classList.remove('hidden');
       backToFaqChoice();
@@ -752,7 +737,6 @@
       checkStudentSession();
     }
 
-    /* АВТОРИЗАЦИЯ СПЕЦИАЛИСТА (С ПРОВЕРКОЙ 2FA) */
     async function submitTechAuth() {
       const login = document.getElementById('techLogin').value.trim();
       const password = document.getElementById('techPassword').value.trim();
@@ -768,13 +752,11 @@
         
         if (res.ok) {
           if (data.status === 'require_2fa') {
-            // Требуется подтверждение кодом из Google Authenticator
             pending2FaLogin = data.login;
             document.getElementById('techStepPassword').classList.add('hidden');
             document.getElementById('techStep2Fa').classList.remove('hidden');
             document.getElementById('tech2FaCodeInput').focus();
           } else {
-            // Успешный вход без 2FA
             localStorage.removeItem('upk_student');
             localStorage.setItem('admin_token', data.token);
             localStorage.setItem('admin_user', JSON.stringify(data.user));
@@ -788,7 +770,6 @@
       }
     }
 
-    /* ПОДТВЕРЖДЕНИЕ 2FA-КОДА ПРИ ВХОДЕ */
     async function submit2FaLogin() {
       const code = document.getElementById('tech2FaCodeInput').value.trim();
       if (!code || code.length !== 6) return alert("Введите 6-значный код из Google Authenticator");
@@ -822,7 +803,7 @@
     }
     function performQuickTrack() {
       const query = document.getElementById('trackSearchInput').value.trim();
-      if (!query) return alert("Введите номер тикета или токен.");
+      if (!query) return alert("Введите номер тикета.");
       closeQuickTrackModal();
       openDetailsByNumber(query);
     }
@@ -840,6 +821,14 @@
         document.getElementById('detailTicketDescription').textContent = t.description;
         document.getElementById('detailTicketDate').textContent = t.created_at;
         document.getElementById('detailStudentAuthor').textContent = t.student_name ? `Заявитель: ${t.student_name}` : 'Заявитель (анонимно)';
+
+        const roomBadge = document.getElementById('detailRoomBadge');
+        if (t.room_number) {
+          roomBadge.textContent = `📍 Аудитория: Кабинет №${t.room_number}`;
+          roomBadge.classList.remove('hidden');
+        } else {
+          roomBadge.classList.add('hidden');
+        }
 
         const st = document.getElementById('detailTicketStatus');
         st.textContent = t.status;
@@ -908,20 +897,10 @@
 
     function filterCabinetTickets(tab) {
       currentCabinetTab = tab;
-      const tabs = ['tabNew', 'tabProgress', 'tabResolved'];
-      tabs.forEach(t => document.getElementById(t).className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition");
-
       let filtered = [];
-      if (tab === 'new') {
-        document.getElementById('tabNew').className = "flex-1 py-2 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400 font-bold transition";
-        filtered = allStudentTickets.filter(t => t.status === 'Новая');
-      } else if (tab === 'progress') {
-        document.getElementById('tabProgress').className = "flex-1 py-2 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-amber-600 dark:text-amber-400 font-bold transition";
-        filtered = allStudentTickets.filter(t => ['В работе', 'На рассмотрении', 'Назначен исполнитель'].includes(t.status));
-      } else {
-        document.getElementById('tabResolved').className = "flex-1 py-2 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400 font-bold transition";
-        filtered = allStudentTickets.filter(t => t.status === 'Решена');
-      }
+      if (tab === 'new') filtered = allStudentTickets.filter(t => t.status === 'Новая');
+      else if (tab === 'progress') filtered = allStudentTickets.filter(t => ['В работе', 'На рассмотрении', 'Назначен исполнитель'].includes(t.status));
+      else filtered = allStudentTickets.filter(t => t.status === 'Решена');
 
       const container = document.getElementById('cabinetTicketsList');
       container.innerHTML = '';
@@ -937,11 +916,11 @@
         item.innerHTML = `
           <div class="flex justify-between items-center">
             <span class="font-bold text-indigo-600 dark:text-indigo-400">${t.public_number}</span>
-            <span class="px-2 py-0.5 rounded-md font-bold ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : (t.status === 'В работе' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400')}">${t.status}</span>
+            <span class="px-2 py-0.5 rounded-md font-bold ${t.status === 'Решена' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${t.status}</span>
           </div>
+          ${t.room_number ? `<div class="text-[11px] font-bold text-indigo-500">📍 Кабинет ${t.room_number}</div>` : ''}
           <div class="font-bold text-slate-800 dark:text-slate-100">${t.title}</div>
           <div class="text-slate-500 truncate">${t.description}</div>
-          ${t.admin_reply ? '<div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Есть ответ специалиста</div>' : ''}
         `;
         container.appendChild(item);
       });
@@ -996,7 +975,7 @@
           setTimeout(() => openFormalTicketForm(text, data), 1200);
         }
       } catch (e) {
-        appendMessage('ai', 'Сервис временно перегружен. Вы можете сразу оформить заявку.');
+        appendMessage('ai', 'Вы можете сразу оформить официальную заявку.');
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>Отправить вопрос</span>`;
@@ -1048,6 +1027,7 @@
       const title = document.getElementById('formTitle').value;
       const category = document.getElementById('formCategory').value;
       const description = document.getElementById('formDescription').value;
+      const room_number = document.getElementById('formRoom').value.trim();
 
       let studentName = null;
       let studentCard = null;
@@ -1063,6 +1043,7 @@
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           title, description, category,
+          room_number: room_number || null,
           is_dangerous: lastAiData ? lastAiData.is_dangerous : false,
           student_name: studentName,
           student_card: studentCard,
@@ -1075,6 +1056,9 @@
       document.getElementById('successCard').classList.remove('hidden');
       document.getElementById('successCard').classList.add('flex', 'rise-up');
       document.getElementById('ticketNumberBadge').textContent = data.public_number;
+      if (data.room_number) {
+        document.getElementById('ticketRoomBadge').textContent = `Аудитория: Кабинет №${data.room_number}`;
+      }
     }
 
     function resetAll() {
@@ -1083,6 +1067,7 @@
       document.getElementById('messagesHistory').innerHTML = '';
       document.getElementById('messagesHistory').classList.add('hidden');
       document.getElementById('userInput').value = '';
+      if (!scannedRoom) document.getElementById('formRoom').value = '';
       removePhoto();
     }
   </script>
