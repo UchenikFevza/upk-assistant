@@ -234,10 +234,11 @@ def api_floor_map(_: dict = Depends(verify_token)):
     return get_floor_map_data()
 
 @app.get("/api/qr/room/{room_number}")
-def generate_room_qr(room_number: str):
+def generate_room_qr(room_number: str, request: Request):
     import qrcode
-    # Ссылка для автоматического открытия кабинета в форме
-    target_url = f"{BASE_URL}/?room={room_number.strip()}"
+    # Берём реальный адрес сайта из входящего запроса (https://upk-test.onrender.com)
+    domain = str(request.base_url).rstrip("/")
+    target_url = f"{domain}/?room={room_number.strip()}"
     img = qrcode.make(target_url)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
